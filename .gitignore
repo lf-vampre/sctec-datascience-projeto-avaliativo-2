@@ -1,0 +1,26 @@
+# Ambiente virtual
+.venv/
+
+# Python cache e testes
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Configurações locais e segredos
+.streamlit/secrets.toml
+.env
+
+# Dados efêmeros e sandbox (Bronze e Prata ignorados, Gold versionado)
+data/bronze/*
+!data/bronze/.gitkeep
+data/silver/*
+!data/silver/.gitkeep
+data/_sandbox/*
+!data/_sandbox/.gitkeep
+
+# IDEs e OS
+.vscode/
+.idea/
+.DS_Store
