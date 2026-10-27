@@ -10,6 +10,7 @@ class AccountSpecIndustrial(TypedDict):
 
 
 class AccountSpecFinancial(TypedDict):
+    cd_conta: Optional[str]
     keywords: List[str]
     demonstrativo: str
 
@@ -78,9 +79,10 @@ INDUSTRIAL_ACCOUNTS: Dict[str, AccountSpecIndustrial] = {
     },
 }
 
-# Mapeamento para plano FINANCEIRO / BANCÁRIO (Busca textual em DS_CONTA)
+# Mapeamento para plano FINANCEIRO / BANCÁRIO (Restrito por cd_conta e busca em DS_CONTA)
 FINANCIAL_ACCOUNTS: Dict[str, AccountSpecFinancial] = {
     "RECEITA_INTERMEDIACAO": {
+        "cd_conta": "3.01",
         "keywords": [
             "receita de intermediação financeira",
             "receitas de intermediação financeira",
@@ -89,6 +91,7 @@ FINANCIAL_ACCOUNTS: Dict[str, AccountSpecFinancial] = {
         "demonstrativo": "DRE",
     },
     "LUCRO_LIQUIDO": {
+        "cd_conta": "3.11",
         "keywords": [
             "lucro/prejuízo consolidado do período",
             "lucro líquido do período",
@@ -97,6 +100,7 @@ FINANCIAL_ACCOUNTS: Dict[str, AccountSpecFinancial] = {
         "demonstrativo": "DRE",
     },
     "PATRIMONIO_LIQUIDO": {
+        "cd_conta": "2.03",
         "keywords": [
             "patrimônio líquido consolidado",
             "patrimônio líquido",

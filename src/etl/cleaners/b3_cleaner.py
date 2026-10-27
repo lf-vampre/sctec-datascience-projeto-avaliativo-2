@@ -8,6 +8,7 @@ from src.config import settings
 from src.etl.base import BaseCleaner, PipelineLogger
 from src.etl.warehouse.persistence import Persistence
 from src.models.contracts import PipelineParams, StepResult
+from src.utils.memory import release
 
 
 class B3Cleaner(BaseCleaner):
@@ -203,6 +204,8 @@ class B3Cleaner(BaseCleaner):
             "CLEAN_SUCCESS",
             f"Prata B3 gravada em {save_res['parquet_path']} ({save_res['rows']} linhas)",
         )
+
+        release()
 
         return StepResult(
             step_id=step_id,

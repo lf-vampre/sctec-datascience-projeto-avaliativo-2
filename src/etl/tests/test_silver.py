@@ -1,4 +1,7 @@
-"""Testes de integração e unidade para a camada Prata (BacenCleaner, B3Cleaner e CvmCleaner com AccountMapper)."""
+"""Testes de integração e unidade para a camada Prata (BacenCleaner, B3Cleaner e CvmCleaner).
+
+Valida desacoplamento por fonte, ordem trocada de execução, idempotência e isolamento.
+"""
 
 from unittest.mock import MagicMock
 import pandas as pd
@@ -220,21 +223,18 @@ def test_account_mapper_industrial_and_financial(logger: PipelineLogger) -> None
     mapper = AccountMapper(logger=logger)
     df_mapped, warnings = mapper.map_accounts(df)
 
-    # WEGE3 (14311) - Industrial
     wege_rec = df_mapped[(df_mapped["cd_cvm"] == 14311) & (df_mapped["cd_conta"] == "3.01")]
     assert wege_rec.iloc[0]["codigo_indicador"] == "RECEITA_LIQUIDA"
 
     wege_ac = df_mapped[(df_mapped["cd_cvm"] == 14311) & (df_mapped["cd_conta"] == "1.01")]
     assert wege_ac.iloc[0]["codigo_indicador"] == "ATIVO_CIRCULANTE"
 
-    # ITUB4 (19348) - Financeira
     itub_rec = df_mapped[(df_mapped["cd_cvm"] == 19348) & (df_mapped["cd_conta"] == "3.01")]
     assert itub_rec.iloc[0]["codigo_indicador"] == "RECEITA_INTERMEDIACAO"
 
     itub_pl = df_mapped[(df_mapped["cd_cvm"] == 19348) & (df_mapped["cd_conta"] == "2.03")]
     assert itub_pl.iloc[0]["codigo_indicador"] == "PATRIMONIO_LIQUIDO"
 
-    # Conta industrial (3.05) em financeira (19348) deve ficar nula
     itub_ebit = df_mapped[(df_mapped["cd_cvm"] == 19348) & (df_mapped["cd_conta"] == "3.05")]
     assert pd.isna(itub_ebit.iloc[0]["codigo_indicador"])
 
@@ -276,3 +276,109 @@ def test_cvm_cleaner_integration_with_account_mapper(logger: PipelineLogger, par
     saved_df = mock_storage.save.call_args[1]["df"]
     assert "codigo_indicador" in saved_df.columns
     assert saved_df.iloc[0]["codigo_indicador"] == "RECEITA_LIQUIDA"
+
+
+# ------------------------------------------------------------------------------
+# Testes STORY-017: Desacoplamento, Idempotência, Ordem Trocada e Isolamento
+# ------------------------------------------------------------------------------
+
+def test_execution_order_independence(logger: PipelineLogger, params: PipelineParams) -> None:
+    sgs_selic = settings.BACEN_SERIES["SELIC_META"]["sgs_codigo"]
+
+    df_bacen = pd.DataFrame({
+        "data": ["01/01/2023"],
+        "valor": ["13.75"],
+        "serie_codigo": [sgs_selic],
+    })
+    df_b3 = pd.DataFrame({
+        "ticker": ["WEGE3"],
+        "data": ["2023-01-02"],
+        "open": [38.0],
+        "high": [39.0],
+        "low": [37.5],
+        "close": [38.8],
+        "volume": [1000000],
+    })
+    df_cvm = pd.DataFrame({
+        "CD_CVM": ["14311"],
+        "DT_FIM_EXERC": ["2022-12-31"],
+        "CD_CONTA": ["3.01"],
+        "DS_CONTA": ["Receita de Venda de Bens e/ou Serviços"],
+        "ST_CONTA_FIXA": ["S"],
+        "VL_CONTA": [100.0],
+        "ESCALA_MOEDA": ["MIL"],
+        "VERSAO": [1],
+        "ORDEM_EXERC": ["ÚLTIMO"],
+    })
+
+    def make_storage(df):
+        st = MagicMock()
+        st.load.return_value = df
+        st.save.return_value = {"parquet_path": "dummy.parquet", "rows": 1, "neon_ok": False, "warning": None}
+        return st
+
+    # Ordem 1: Bacen -> B3 -> CVM
+    res_bacen_1 = BacenCleaner(logger, make_storage(df_bacen)).clean(params)
+    res_b3_1 = B3Cleaner(logger, make_storage(df_b3)).clean(params)
+    res_cvm_1 = CvmCleaner(logger, make_storage(df_cvm)).clean(params)
+
+    # Ordem 2: CVM -> B3 -> Bacen
+    res_cvm_2 = CvmCleaner(logger, make_storage(df_cvm)).clean(params)
+    res_b3_2 = B3Cleaner(logger, make_storage(df_b3)).clean(params)
+    res_bacen_2 = BacenCleaner(logger, make_storage(df_bacen)).clean(params)
+
+    assert res_bacen_1.ok is True and res_bacen_2.ok is True
+    assert res_b3_1.ok is True and res_b3_2.ok is True
+    assert res_cvm_1.ok is True and res_cvm_2.ok is True
+    assert res_bacen_1.rows == res_bacen_2.rows == 1
+    assert res_b3_1.rows == res_b3_2.rows == 1
+    assert res_cvm_1.rows == res_cvm_2.rows == 1
+
+
+def test_idempotency_double_execution(logger: PipelineLogger, params: PipelineParams) -> None:
+    df_b3 = pd.DataFrame({
+        "ticker": ["WEGE3"],
+        "data": ["2023-01-02"],
+        "open": [38.0],
+        "high": [39.0],
+        "low": [37.5],
+        "close": [38.8],
+        "volume": [1000000],
+    })
+
+    mock_storage = MagicMock()
+    mock_storage.load.return_value = df_b3
+    mock_storage.save.return_value = {"parquet_path": "dummy.parquet", "rows": 1, "neon_ok": False, "warning": None}
+
+    cleaner = B3Cleaner(logger=logger, storage_writer=mock_storage)
+
+    res_run1 = cleaner.clean(params)
+    res_run2 = cleaner.clean(params)
+
+    assert res_run1.ok is True
+    assert res_run2.ok is True
+    assert res_run1.rows == res_run2.rows == 1
+
+
+def test_isolation_missing_one_bronze_source(logger: PipelineLogger, params: PipelineParams) -> None:
+    df_bacen = pd.DataFrame({
+        "data": ["01/01/2023"],
+        "valor": ["13.75"],
+        "serie_codigo": [settings.BACEN_SERIES["SELIC_META"]["sgs_codigo"]],
+    })
+
+    st_bacen = MagicMock()
+    st_bacen.load.return_value = df_bacen
+    st_bacen.save.return_value = {"parquet_path": "bacen.parquet", "rows": 1, "neon_ok": False, "warning": None}
+
+    st_b3_empty = MagicMock()
+    st_b3_empty.load.return_value = pd.DataFrame()
+
+    res_bacen = BacenCleaner(logger, st_bacen).clean(params)
+    res_b3 = B3Cleaner(logger, st_b3_empty).clean(params)
+
+    assert res_bacen.ok is True
+    assert res_bacen.rows == 1
+    assert res_b3.ok is False
+    assert res_b3.rows == 0
+    assert "vazio" in res_b3.error
