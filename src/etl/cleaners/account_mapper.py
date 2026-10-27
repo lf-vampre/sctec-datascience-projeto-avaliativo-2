@@ -34,7 +34,7 @@ class AccountMapper:
             for code, spec in INDUSTRIAL_ACCOUNTS.items()
         }
 
-        # 2. Mapeamento Plano Financeiro (por busca em DS_CONTA e DEMONSTRATIVO)
+        # 2. Mapeamento Plano Financeiro (por busca em DS_CONTA e DEMONSTRATIVO, restrito a ST_CONTA_FIXA = 'S')
         fin_lookup = FINANCIAL_ACCOUNTS
 
         mapped_codes: List[Optional[str]] = []
@@ -50,15 +50,18 @@ class AccountMapper:
 
             code_found: Optional[str] = None
 
-            if tipo_plano == "industrial":
-                if st_conta_fixa == "S":
+            if st_conta_fixa == "S":
+                if tipo_plano == "industrial":
                     code_found = ind_lookup.get((cd_conta, demonstrativo))
-            elif tipo_plano == "financeira":
-                for ind_code, spec in fin_lookup.items():
-                    if spec["demonstrativo"] == demonstrativo:
-                        if any(kw in ds_conta for kw in spec["keywords"]):
-                            code_found = ind_code
-                            break
+                elif tipo_plano == "financeira":
+                    for ind_code, spec in fin_lookup.items():
+                        if spec["demonstrativo"] == demonstrativo:
+                            spec_cd = spec.get("cd_conta")
+                            if spec_cd and cd_conta != spec_cd:
+                                continue
+                            if any(kw in ds_conta for kw in spec["keywords"]):
+                                code_found = ind_code
+                                break            
 
             mapped_codes.append(code_found)
 
