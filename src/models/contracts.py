@@ -1,7 +1,7 @@
 """Contratos de dados (dataclasses) trocados entre ETL, Warehouse e UI."""
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 
 @dataclass
@@ -13,6 +13,10 @@ class PipelineParams:
     b3_periodo: Tuple[str, str]     # ("YYYY-MM-DD", "YYYY-MM-DD")
     cvm_anos: List[int]            # Ex: [2021, 2022, 2023]
     is_sandbox: bool = True
+
+    @property
+    def modo(self) -> str:
+        return "sandbox" if self.is_sandbox else "producao"
 
 
 @dataclass
