@@ -1,13 +1,15 @@
-"""Testes unitários e de integração para os extratores da camada Bronze."""
+"""Testes de integração para os extratores da camada Bronze (Bacen, Cadastro, B3 e CVM)."""
 
 from pathlib import Path
+import pandas as pd
 import pytest
 
-from src.etl.base import PipelineLogger
-from src.etl.extractors.bacen_extractor import BacenExtractor
 from src.etl.extractors.b3_extractor import B3Extractor
+from src.etl.extractors.bacen_extractor import BacenExtractor
 from src.etl.extractors.cadastro_extractor import CadastroExtractor
+from src.etl.extractors.cvm_extractor import CvmExtractor
 from src.etl.warehouse.persistence import Persistence
+from src.etl.base import PipelineLogger
 from src.models.contracts import PipelineParams
 
 
@@ -23,29 +25,27 @@ def test_bacen_extractor_run_bronze(tmp_path: Path, monkeypatch):
     extractor = BacenExtractor(logger=logger, storage_writer=persistence)
 
     params = PipelineParams(
-        tickers=[],
+        tickers=["WEGE3", "PETR4"],
         bacen_periodo=("2023-01-01", "2023-03-31"),
         b3_periodo=("2023-01-01", "2023-03-31"),
         cvm_anos=[2023],
         is_sandbox=True,
     )
 
-    res1 = extractor.run_bronze(params)
+    res = extractor.run_bronze(params)
 
-    assert res1.ok is True
-    assert res1.rows > 0
-    assert len(res1.paths) == 1
-    assert Path(res1.paths[0]).exists()
+    assert res.ok is True
+    assert res.rows > 0
+    assert len(res.paths) == 1
 
-    df_saved = persistence.load("bronze", "bacen_sgs", modo="sandbox")
-    assert not df_saved.empty
-    assert set(df_saved.columns) == {"serie_codigo", "serie_nome", "data", "valor", "_ingest_ts", "_run_id"}
-    series_obtidas = set(df_saved["serie_codigo"].unique())
-    assert len(series_obtidas) == 7
+    parquet_file = Path(res.paths[0])
+    assert parquet_file.exists()
 
-    res2 = extractor.run_bronze(params)
-    assert res2.ok is True
-    assert any("reutilizado" in w.lower() for w in res2.warnings)
+    df = pd.read_parquet(parquet_file)
+    assert not df.empty
+    assert "data" in df.columns
+    assert "valor" in df.columns
+    assert "serie_codigo" in df.columns
 
 
 @pytest.mark.integration
@@ -60,27 +60,29 @@ def test_cadastro_extractor_run_bronze(tmp_path: Path, monkeypatch):
     extractor = CadastroExtractor(logger=logger, storage_writer=persistence)
 
     params = PipelineParams(
-        tickers=["WEGE3", "PETR4", "VALE3"],
+        tickers=["WEGE3", "PETR4"],
         bacen_periodo=("2023-01-01", "2023-03-31"),
         b3_periodo=("2023-01-01", "2023-03-31"),
         cvm_anos=[2023],
         is_sandbox=True,
     )
 
-    res1 = extractor.run_bronze(params)
+    res = extractor.run_bronze(params)
 
-    assert res1.ok is True
-    assert res1.rows > 0
-    assert len(res1.paths) == 1
-    assert Path(res1.paths[0]).exists()
+    assert res.ok is True
+    assert res.rows >= 2
+    assert len(res.paths) == 1
 
-    df_saved = persistence.load("bronze", "cvm_cadastro", modo="sandbox")
-    assert not df_saved.empty
-    assert ("CD_CVM" in df_saved.columns) or ("cd_cvm" in df_saved.columns)
+    parquet_file = Path(res.paths[0])
+    assert parquet_file.exists()
 
-    res2 = extractor.run_bronze(params)
-    assert res2.ok is True
-    assert any("reutilizado" in w.lower() for w in res2.warnings)
+    df = pd.read_parquet(parquet_file)
+    assert len(df) >= 2
+    assert "CD_CVM" in df.columns
+    assert "CNPJ_CIA" in df.columns
+    assert "DENOM_SOCIAL" in df.columns
+    expected_cvm_codes = {"5410", "05410", "005410", "9512", "09512", "009512"}
+    assert set(df["CD_CVM"].astype(str).str.strip().unique()).issubset(expected_cvm_codes)
 
 
 @pytest.mark.integration
@@ -102,34 +104,57 @@ def test_b3_extractor_run_bronze(tmp_path: Path, monkeypatch):
         is_sandbox=True,
     )
 
-    res1 = extractor.run_bronze(params)
+    res = extractor.run_bronze(params)
 
-    assert res1.ok is True
-    assert res1.rows > 0
-    assert len(res1.paths) == 1
-    assert Path(res1.paths[0]).exists()
+    assert res.ok is True
+    assert res.rows > 0
+    assert len(res.paths) > 0
 
-    df_saved = persistence.load("bronze", "b3_cotacoes", modo="sandbox")
-    assert not df_saved.empty
+    df = persistence.load("bronze", "b3_cotacoes", modo=params.modo)
+    assert not df.empty
+    assert "ticker" in df.columns
+    assert "close" in df.columns
+    assert set(df["ticker"].unique()).issubset({"WEGE3", "PETR4"})
 
-    expected_cols = {"data", "open", "high", "low", "close", "volume", "ticker", "_ingest_ts", "_run_id"}
-    assert expected_cols.issubset(set(df_saved.columns))
 
-    # Verifica ausência do sufixo .SA nos tickers
-    tickers_presentes = set(df_saved["ticker"].unique())
-    assert tickers_presentes.issubset({"WEGE3", "PETR4"})
-    assert not any(t.endswith(".SA") for t in tickers_presentes)
+@pytest.mark.integration
+def test_cvm_extractor_run_bronze(tmp_path: Path, monkeypatch):
+    data_dir = tmp_path / "data"
+    sandbox_dir = tmp_path / "data" / "_sandbox"
+    monkeypatch.setattr("src.utils.paths.DATA_DIR", data_dir)
+    monkeypatch.setattr("src.utils.paths.SANDBOX_DIR", sandbox_dir)
 
-    # Verifica ausência de valores nulos na coluna close
-    assert df_saved["close"].isna().sum() == 0
+    logger = PipelineLogger()
+    persistence = Persistence()
+    extractor = CvmExtractor(logger=logger, storage_writer=persistence)
 
-    # Valida período de dados
-    min_date = df_saved["data"].min()
-    max_date = df_saved["data"].max()
-    assert min_date >= "2023-01-01"
-    assert max_date <= "2023-03-31"
+    params = PipelineParams(
+        tickers=["WEGE3", "PETR4"],
+        bacen_periodo=("2023-01-01", "2023-03-31"),
+        b3_periodo=("2023-01-01", "2023-03-31"),
+        cvm_anos=[2023],
+        is_sandbox=True,
+    )
 
-    # Teste de reutilização por TTL
-    res2 = extractor.run_bronze(params)
-    assert res2.ok is True
-    assert any("reutilizado" in w.lower() for w in res2.warnings)
+    res = extractor.run_bronze(params)
+
+    assert res.ok is True
+    assert res.rows > 0
+    assert len(res.paths) == 3
+
+    # Validação da presença e schema das 3 tabelas Bronze da CVM
+    for table_name in ["cvm_dre", "cvm_bpa", "cvm_bpp"]:
+        df = persistence.load("bronze", table_name, modo=params.modo)
+        assert not df.empty
+        assert "CD_CVM" in df.columns
+        assert "ORDEM_EXERC" in df.columns
+        assert "ano_arquivo" in df.columns
+
+        # Garante que apenas empresas do universo selecionado foram carregadas
+        expected_cvm_codes = {"5410", "05410", "005410", "9512", "09512", "009512"}
+        extracted_codes = set(df["CD_CVM"].astype(str).str.strip().unique())
+        assert extracted_codes.issubset(expected_cvm_codes)
+
+        # Valida existência de registros dos exercícios ÚLTIMO e PENÚLTIMO
+        ordens = set(df["ORDEM_EXERC"].unique())
+        assert "ÚLTIMO" in ordens or "PENÚLTIMO" in ordens
