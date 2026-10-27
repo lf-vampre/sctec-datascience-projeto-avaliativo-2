@@ -1,10 +1,10 @@
 """Higienizador e limpador da camada Prata para demonstrativos contábeis da CVM (DRE, BPA, BPP)."""
 
 from typing import List, Optional
-import numpy as np
 import pandas as pd
 
 from src.etl.base import BaseCleaner, PipelineLogger
+from src.etl.cleaners.account_mapper import AccountMapper
 from src.etl.warehouse.persistence import Persistence
 from src.models.contracts import PipelineParams, StepResult
 from src.utils.memory import release
@@ -22,7 +22,7 @@ class CvmCleaner(BaseCleaner):
         self.persistence = storage_writer or Persistence()
 
     def clean(self, params: PipelineParams) -> StepResult:
-        """Lê Bronze da CVM (DRE, BPA, BPP), consolida escalas e versões e salva na Prata."""
+        """Lê Bronze da CVM (DRE, BPA, BPP), consolida escalas e versões, aplica mapeamento de contas e salva na Prata."""
         step_id = "clean_CvmCleaner"
         warnings: List[str] = []
 
@@ -84,7 +84,7 @@ class CvmCleaner(BaseCleaner):
         if "ESCALA_MOEDA" in df.columns:
             escala_str = df["ESCALA_MOEDA"].astype(str).str.strip().str.upper()
             unknown_mask = ~escala_str.isin(["MIL", "UNIDADE"]) & df["ESCALA_MOEDA"].notna()
-            
+
             if unknown_mask.any():
                 unk_count = unknown_mask.sum()
                 msg_esc = f"Identificadas {unk_count} linhas com ESCALA_MOEDA desconhecida."
@@ -127,7 +127,6 @@ class CvmCleaner(BaseCleaner):
                 self.logger.emit("INFO", "CvmCleaner", "RESTATEMENT", msg_re)
 
         # 6. Desduplicação por Versão e Exercício
-        # Prioridade: Maior VERSAO -> Se empate, ORDEM_EXERC == 'ÚLTIMO'
         df["_is_ultimo"] = (df["ORDEM_EXERC"].astype(str).str.upper() == "ÚLTIMO").astype(int) if "ORDEM_EXERC" in df.columns else 0
 
         group_keys = ["CD_CVM", "DEMONSTRATIVO", "CD_CONTA", "DT_FIM_EXERC"]
@@ -144,8 +143,13 @@ class CvmCleaner(BaseCleaner):
 
         df.drop(columns=["_is_ultimo"], inplace=True, errors="ignore")
 
-        # 7. Normalização final de nomes de colunas para minúsculo
+        # 7. Normalização de colunas para minúsculo
         df.columns = [col.lower() for col in df.columns]
+
+        # 8. Mapeamento de Contas por tipo de plano
+        mapper = AccountMapper(logger=self.logger)
+        df, map_warnings = mapper.map_accounts(df)
+        warnings.extend(map_warnings)
 
         cols_to_save = [
             "cd_cvm",
@@ -159,6 +163,7 @@ class CvmCleaner(BaseCleaner):
             "vl_conta",
             "versao",
             "ano",
+            "codigo_indicador",
         ]
         available_cols = [c for c in cols_to_save if c in df.columns]
 
@@ -167,7 +172,7 @@ class CvmCleaner(BaseCleaner):
         if "_run_id" in df.columns:
             available_cols.append("_run_id")
 
-        # 8. Persistência na Prata
+        # 9. Persistência na Prata
         save_res = self.persistence.save(
             layer="silver",
             name="cvm_demonstrativos",

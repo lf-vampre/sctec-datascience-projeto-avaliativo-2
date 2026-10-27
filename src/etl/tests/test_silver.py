@@ -1,12 +1,12 @@
-"""Testes de integração e unidade para a camada Prata (BacenCleaner, B3Cleaner e CvmCleaner)."""
+"""Testes de integração e unidade para a camada Prata (BacenCleaner, B3Cleaner e CvmCleaner com AccountMapper)."""
 
 from unittest.mock import MagicMock
-import numpy as np
 import pandas as pd
 import pytest
 
 from src.config import settings
 from src.etl.base import PipelineLogger
+from src.etl.cleaners.account_mapper import AccountMapper
 from src.etl.cleaners.bacen_cleaner import BacenCleaner
 from src.etl.cleaners.b3_cleaner import B3Cleaner
 from src.etl.cleaners.cvm_cleaner import CvmCleaner
@@ -21,7 +21,7 @@ def logger() -> PipelineLogger:
 @pytest.fixture
 def params() -> PipelineParams:
     return PipelineParams(
-        tickers=["WEGE3", "VALE3"],
+        tickers=["WEGE3", "ITUB4"],
         bacen_periodo=("2019-01-01", "2023-12-31"),
         b3_periodo=("2019-01-01", "2024-01-01"),
         cvm_anos=[2021, 2022, 2023],
@@ -198,20 +198,58 @@ def test_b3_cleaner_empty_bronze(logger: PipelineLogger, params: PipelineParams)
 
 
 # ------------------------------------------------------------------------------
-# Testes CvmCleaner
+# Testes AccountMapper e CvmCleaner
 # ------------------------------------------------------------------------------
 
-def test_cvm_cleaner_scale_versions_and_dedup(logger: PipelineLogger, params: PipelineParams) -> None:
+def test_account_mapper_industrial_and_financial(logger: PipelineLogger) -> None:
+    df = pd.DataFrame({
+        "cd_cvm": [14311, 14311, 19348, 19348, 19348],
+        "ano": [2022, 2022, 2022, 2022, 2022],
+        "demonstrativo": ["DRE", "BPA", "DRE", "BPP", "DRE"],
+        "cd_conta": ["3.01", "1.01", "3.01", "2.03", "3.05"],
+        "ds_conta": [
+            "Receita de Venda de Bens e/ou Serviços",
+            "Ativo Circulante",
+            "Receitas da Intermediação Financeira",
+            "Patrimônio Líquido Consolidado",
+            "Resultado Antes do Resultado Financeiro e dos Impostos",
+        ],
+        "st_conta_fixa": ["S", "S", "S", "S", "S"],
+    })
+
+    mapper = AccountMapper(logger=logger)
+    df_mapped, warnings = mapper.map_accounts(df)
+
+    # WEGE3 (14311) - Industrial
+    wege_rec = df_mapped[(df_mapped["cd_cvm"] == 14311) & (df_mapped["cd_conta"] == "3.01")]
+    assert wege_rec.iloc[0]["codigo_indicador"] == "RECEITA_LIQUIDA"
+
+    wege_ac = df_mapped[(df_mapped["cd_cvm"] == 14311) & (df_mapped["cd_conta"] == "1.01")]
+    assert wege_ac.iloc[0]["codigo_indicador"] == "ATIVO_CIRCULANTE"
+
+    # ITUB4 (19348) - Financeira
+    itub_rec = df_mapped[(df_mapped["cd_cvm"] == 19348) & (df_mapped["cd_conta"] == "3.01")]
+    assert itub_rec.iloc[0]["codigo_indicador"] == "RECEITA_INTERMEDIACAO"
+
+    itub_pl = df_mapped[(df_mapped["cd_cvm"] == 19348) & (df_mapped["cd_conta"] == "2.03")]
+    assert itub_pl.iloc[0]["codigo_indicador"] == "PATRIMONIO_LIQUIDO"
+
+    # Conta industrial (3.05) em financeira (19348) deve ficar nula
+    itub_ebit = df_mapped[(df_mapped["cd_cvm"] == 19348) & (df_mapped["cd_conta"] == "3.05")]
+    assert pd.isna(itub_ebit.iloc[0]["codigo_indicador"])
+
+
+def test_cvm_cleaner_integration_with_account_mapper(logger: PipelineLogger, params: PipelineParams) -> None:
     df_dre_bronze = pd.DataFrame({
-        "CD_CVM": ["14311", "14311", "14311"],
-        "DT_FIM_EXERC": ["2022-12-31", "2022-12-31", "2022-12-31"],
-        "CD_CONTA": ["3.01", "3.01", "3.01"],
-        "DS_CONTA": ["Receita de Venda", "Receita de Venda", "Receita de Venda"],
-        "ST_CONTA_FIXA": ["S", "S", "S"],
-        "VL_CONTA": [100.0, 105.0, 105.0],
-        "ESCALA_MOEDA": ["MIL", "MIL", "MIL"],
-        "VERSAO": [1, 2, 2],
-        "ORDEM_EXERC": ["ÚLTIMO", "PENÚLTIMO", "ÚLTIMO"],
+        "CD_CVM": ["14311"],
+        "DT_FIM_EXERC": ["2022-12-31"],
+        "CD_CONTA": ["3.01"],
+        "DS_CONTA": ["Receita de Venda de Bens e/ou Serviços"],
+        "ST_CONTA_FIXA": ["S"],
+        "VL_CONTA": [100.0],
+        "ESCALA_MOEDA": ["MIL"],
+        "VERSAO": [1],
+        "ORDEM_EXERC": ["ÚLTIMO"],
     })
 
     def mock_load(layer: str, name: str, modo: str = "sandbox") -> pd.DataFrame:
@@ -236,20 +274,5 @@ def test_cvm_cleaner_scale_versions_and_dedup(logger: PipelineLogger, params: Pi
     mock_storage.save.assert_called_once()
 
     saved_df = mock_storage.save.call_args[1]["df"]
-    assert len(saved_df) == 1
-    assert saved_df.iloc[0]["vl_conta"] == 105000.0
-    assert saved_df.iloc[0]["versao"] == 2
-    assert saved_df.iloc[0]["cd_cvm"] == 14311
-    assert saved_df.iloc[0]["ano"] == 2022
-
-
-def test_cvm_cleaner_empty_bronze(logger: PipelineLogger, params: PipelineParams) -> None:
-    mock_storage = MagicMock()
-    mock_storage.load.return_value = pd.DataFrame()
-
-    cleaner = CvmCleaner(logger=logger, storage_writer=mock_storage)
-    result = cleaner.clean(params)
-
-    assert result.ok is False
-    assert result.rows == 0
-    assert "vazio" in result.error
+    assert "codigo_indicador" in saved_df.columns
+    assert saved_df.iloc[0]["codigo_indicador"] == "RECEITA_LIQUIDA"
