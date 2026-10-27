@@ -1,4 +1,4 @@
-"""Testes de integração e unidade para a camada Prata (BacenCleaner e B3Cleaner)."""
+"""Testes de integração e unidade para a camada Prata (BacenCleaner, B3Cleaner e CvmCleaner)."""
 
 from unittest.mock import MagicMock
 import numpy as np
@@ -9,6 +9,7 @@ from src.config import settings
 from src.etl.base import PipelineLogger
 from src.etl.cleaners.bacen_cleaner import BacenCleaner
 from src.etl.cleaners.b3_cleaner import B3Cleaner
+from src.etl.cleaners.cvm_cleaner import CvmCleaner
 from src.models.contracts import PipelineParams
 
 
@@ -122,7 +123,7 @@ def test_b3_cleaner_success(logger: PipelineLogger, params: PipelineParams) -> N
         "open": [38.0, 38.0, 38.5, 39.0],
         "high": [39.0, 39.0, 39.5, 40.0],
         "low": [37.5, 37.5, 38.0, 38.5],
-        "close": [38.8, 38.8, 39.2, None],  # 1 duplicata e 1 close nulo
+        "close": [38.8, 38.8, 39.2, None],
         "volume": [1000000, 1000000, 1200000, 500000],
     })
 
@@ -154,10 +155,10 @@ def test_b3_cleaner_ohlc_and_extreme_return_flags(logger: PipelineLogger, params
         "ticker": ["VALE3", "VALE3"],
         "data": ["2023-01-02", "2023-01-03"],
         "open": [80.0, 80.0],
-        "high": [75.0, 120.0],  # high < open no dia 1 (inconsistente)
+        "high": [75.0, 120.0],
         "low": [70.0, 78.0],
-        "close": [80.0, 120.0],  # retorno +50% no dia 2 (extremo)
-        "volume": [0, 500000],   # volume zero no dia 1
+        "close": [80.0, 120.0],
+        "volume": [0, 500000],
     })
 
     mock_storage = MagicMock()
@@ -189,6 +190,64 @@ def test_b3_cleaner_empty_bronze(logger: PipelineLogger, params: PipelineParams)
     mock_storage.load.return_value = pd.DataFrame()
 
     cleaner = B3Cleaner(logger=logger, storage_writer=mock_storage)
+    result = cleaner.clean(params)
+
+    assert result.ok is False
+    assert result.rows == 0
+    assert "vazio" in result.error
+
+
+# ------------------------------------------------------------------------------
+# Testes CvmCleaner
+# ------------------------------------------------------------------------------
+
+def test_cvm_cleaner_scale_versions_and_dedup(logger: PipelineLogger, params: PipelineParams) -> None:
+    df_dre_bronze = pd.DataFrame({
+        "CD_CVM": ["14311", "14311", "14311"],
+        "DT_FIM_EXERC": ["2022-12-31", "2022-12-31", "2022-12-31"],
+        "CD_CONTA": ["3.01", "3.01", "3.01"],
+        "DS_CONTA": ["Receita de Venda", "Receita de Venda", "Receita de Venda"],
+        "ST_CONTA_FIXA": ["S", "S", "S"],
+        "VL_CONTA": [100.0, 105.0, 105.0],
+        "ESCALA_MOEDA": ["MIL", "MIL", "MIL"],
+        "VERSAO": [1, 2, 2],
+        "ORDEM_EXERC": ["ÚLTIMO", "PENÚLTIMO", "ÚLTIMO"],
+    })
+
+    def mock_load(layer: str, name: str, modo: str = "sandbox") -> pd.DataFrame:
+        if name == "cvm_dre":
+            return df_dre_bronze
+        return pd.DataFrame()
+
+    mock_storage = MagicMock()
+    mock_storage.load.side_effect = mock_load
+    mock_storage.save.return_value = {
+        "parquet_path": "data/silver/cvm_demonstrativos.parquet",
+        "rows": 1,
+        "neon_ok": False,
+        "warning": None,
+    }
+
+    cleaner = CvmCleaner(logger=logger, storage_writer=mock_storage)
+    result = cleaner.clean(params)
+
+    assert result.ok is True
+    assert result.rows == 1
+    mock_storage.save.assert_called_once()
+
+    saved_df = mock_storage.save.call_args[1]["df"]
+    assert len(saved_df) == 1
+    assert saved_df.iloc[0]["vl_conta"] == 105000.0
+    assert saved_df.iloc[0]["versao"] == 2
+    assert saved_df.iloc[0]["cd_cvm"] == 14311
+    assert saved_df.iloc[0]["ano"] == 2022
+
+
+def test_cvm_cleaner_empty_bronze(logger: PipelineLogger, params: PipelineParams) -> None:
+    mock_storage = MagicMock()
+    mock_storage.load.return_value = pd.DataFrame()
+
+    cleaner = CvmCleaner(logger=logger, storage_writer=mock_storage)
     result = cleaner.clean(params)
 
     assert result.ok is False
