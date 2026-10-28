@@ -115,10 +115,12 @@ class Persistence:
         final_df.to_parquet(temp_path, index=False, engine="pyarrow", compression=compression)
         temp_path.replace(file_path)
 
+    # Em Persistence._upsert_neon, substituir o método por:
+
     def _upsert_neon(
         self, layer: str, name: str, df: pd.DataFrame, partition_cols: Optional[List[str]]
     ) -> bool:
-        """Executa upsert por partição no Neon PostgreSQL em uma única transação."""
+        """Executa upsert por partição ou carga completa (para dimensões) no Neon em uma transação."""
         engine = db.get_engine()
         if engine is None:
             return False
@@ -133,6 +135,9 @@ class Persistence:
                     where_str = " AND ".join(where_clauses)
                     delete_sql = text(f'DELETE FROM "{layer}"."{name}" WHERE {where_str}')
                     conn.execute(delete_sql, key_dict)
+            else:
+                # Se não há colunas de partição (caso de dimensões), faz limpa e insere (full refresh)
+                conn.execute(text(f'DELETE FROM "{layer}"."{name}"'))
 
             df.to_sql(name=name, schema=layer, con=conn, if_exists="append", index=False)
 
