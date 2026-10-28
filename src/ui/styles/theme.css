@@ -1,0 +1,169 @@
+/* ==========================================================================
+   Estilos CSS Base da Aplicação (.fx-*)
+   ========================================================================== */
+
+.fx-card {
+  background-color: var(--fx-color-surface);
+  border: 1px solid var(--fx-color-border);
+  border-radius: var(--fx-radius-md);
+  padding: var(--fx-space-md);
+  box-shadow: var(--fx-shadow-sm);
+  margin-bottom: var(--fx-space-md);
+}
+
+.fx-hero {
+  background-color: var(--fx-color-surface);
+  border: 1px solid var(--fx-color-border);
+  border-radius: var(--fx-radius-lg);
+  padding: var(--fx-space-xl);
+  margin-bottom: var(--fx-space-lg);
+  box-shadow: var(--fx-shadow-md);
+}
+
+.fx-hero-title {
+  color: var(--fx-color-primary);
+  font-family: var(--fx-font-family);
+  font-size: var(--fx-font-size-3xl);
+  font-weight: 700;
+  margin-bottom: var(--fx-space-xs);
+}
+
+.fx-hero-subtitle {
+  color: var(--fx-color-text-secondary);
+  font-family: var(--fx-font-family);
+  font-size: var(--fx-font-size-md);
+  margin-bottom: 0;
+}
+
+.fx-badge {
+  display: inline-block;
+  padding: var(--fx-space-xs) var(--fx-space-sm);
+  border-radius: var(--fx-radius-full);
+  font-family: var(--fx-font-family);
+  font-size: var(--fx-font-size-xs);
+  font-weight: 600;
+}
+
+.fx-badge-info {
+  background-color: var(--fx-color-info-bg);
+  color: var(--fx-color-info);
+}
+
+.fx-badge-success {
+  background-color: var(--fx-color-positive-bg);
+  color: var(--fx-color-positive);
+}
+
+.fx-badge-warning {
+  background-color: var(--fx-color-warning-bg);
+  color: var(--fx-color-warning);
+}
+
+.fx-badge-danger {
+  background-color: var(--fx-color-negative-bg);
+  color: var(--fx-color-negative);
+}
+
+.fx-header {
+  color: var(--fx-color-text-primary);
+  font-family: var(--fx-font-family);
+  font-weight: 600;
+  margin-bottom: var(--fx-space-sm);
+}
+
+.fx-alert {
+  padding: var(--fx-space-md);
+  border-radius: var(--fx-radius-md);
+  border-left: 4px solid var(--fx-color-info);
+  background-color: var(--fx-color-info-bg);
+  color: var(--fx-color-text-primary);
+  font-family: var(--fx-font-family);
+  font-size: var(--fx-font-size-sm);
+  margin-bottom: var(--fx-space-md);
+}
+
+.fx-alert-warning {
+  border-left-color: var(--fx-color-warning);
+  background-color: var(--fx-color-warning-bg);
+}
+
+.fx-alert-danger {
+  border-left-color: var(--fx-color-negative);
+  background-color: var(--fx-color-negative-bg);
+}
+
+/* ==========================================================================
+   seletores internos (Overrides e acabamento dos elementos nativos Streamlit)
+   ========================================================================== */
+
+/* Sidebar */
+[data-testid="stSidebar"] {
+  background-color: var(--fx-color-surface);
+  border-right: 1px solid var(--fx-color-border);
+}
+
+/* Container com borda nativo */
+[data-testid="stVerticalBlockBorderWrapper"] > div {
+  background-color: var(--fx-color-surface);
+  border-color: var(--fx-color-border) !important;
+  border-radius: var(--fx-radius-md) !important;
+  box-shadow: var(--fx-shadow-sm);
+}
+
+/* Cards st.metric */
+[data-testid="stMetric"] {
+  background-color: var(--fx-color-surface);
+  border: 1px solid var(--fx-color-border);
+  border-radius: var(--fx-radius-md);
+  padding: var(--fx-space-md);
+}
+
+[data-testid="stMetricLabel"] {
+  color: var(--fx-color-text-secondary) !important;
+  font-size: var(--fx-font-size-sm) !important;
+}
+
+[data-testid="stMetricValue"] {
+  color: var(--fx-color-text-primary) !important;
+  font-size: var(--fx-font-size-2xl) !important;
+}
+
+/* Abas st.tabs */
+[data-testid="stTabs"] [data-baseweb="tab-list"] {
+  background-color: transparent;
+  border-bottom: 1px solid var(--fx-color-border);
+  gap: var(--fx-space-sm);
+}
+
+[data-testid="stTabs"] [data-baseweb="tab"] {
+  color: var(--fx-color-text-secondary);
+  font-family: var(--fx-font-family);
+  font-size: var(--fx-font-size-sm);
+  padding: var(--fx-space-sm) var(--fx-space-md);
+  border-radius: var(--fx-radius-sm) var(--fx-radius-sm) 0 0;
+}
+
+[data-testid="stTabs"] [aria-selected="true"] {
+  color: var(--fx-color-secondary) !important;
+  border-bottom-color: var(--fx-color-secondary) !important;
+  font-weight: 600;
+}
+
+/* Botões */
+.stButton > button {
+  border-radius: var(--fx-radius-md);
+  font-family: var(--fx-font-family);
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+}
+
+.stButton > button[kind="primary"] {
+  background-color: var(--fx-color-primary);
+  color: var(--fx-color-surface);
+  border: 1px solid var(--fx-color-primary);
+}
+
+.stButton > button[kind="primary"]:hover {
+  background-color: var(--fx-color-primary-hover);
+  border-color: var(--fx-color-primary-hover);
+}
