@@ -104,10 +104,169 @@ A camada Prata é responsável pelo tratamento de tipos, eliminação de duplica
 | **B3** | Tickers ausentes na extração da camada Bronze (`EMBR3` e `JBSS3`) | Mapeamento de cobertura com emissão de alerta no relatório de execução | 2 tickers não localizados |
 | **BACEN** | Divergência no IPCA acumulado 12M composto vs reportado | Verificação de tolerância de 0,5 pp | 0 incoerências fora da tolerância |
 
+### 4.3. Camada Ouro (Star Schema)
+
+A camada Ouro modela os dados consolidados das camadas Bronze e Prata em um esquema estrela (*Star Schema*) altamente otimizado para consultas analíticas e relatórios operacionais.
+
+#### Arquitetura e Modelagem
+- **Dimensões**:
+  - `dim_tempo`: Cobertura diária contínua (1.827 linhas).
+  - `dim_empresa`: Cadastro unificado das empresas do universo do projeto (19 linhas).
+  - `dim_indicador`: Catálogo estático de métricas brutas e derivadas (32 linhas).
+- **Fatos**:
+  - `fato_macro`: Séries temporais macroeconômicas do BACEN e métricas derivadas como `JURO_REAL_EXPOST` via equação de Fisher (4.636 linhas).
+  - `fato_cotacoes`: Séries de preços e volumes da B3 enriquecidas com retorno diário e médias móveis simples SMA_21 e SMA_50 (21.097 linhas).
+  - `fato_demonstrativos`: Mapeamento unificado de demonstrações contábeis DFP/ITR da CVM e métricas fundamentalistas derivadas (916 linhas).
+
+#### Persistência Dupla e Resiliência
+- **Escrita Simultânea**: Os dados da Ouro são persistidos em formato Parquet comprimido com `zstd` em `data/gold/` e sincronizados via `upsert` relacional no PostgreSQL (Neon).
+- **Fallback de Leitura**: Se o banco de dados Neon apresentar indisponibilidade, o pipeline realiza *fallback* automático para os arquivos Parquet locais.
+- **Manifesto de Auditoria**: Todas as operações gravam metadados em `data/gold/_manifest.json` para validação de integridade.
+
+
+### 4.4. Qualidade, Testes e Validação por Amostragem
+
+#### Testes Automatizados (Pytest)
+A integridade da camada Ouro é garantida por uma suíte de testes unitários e de integração cobrindo regras de negócio, tabelas fato e dimensões:
+
+```bash
+pytest src/etl/tests/test_gold.py
+
+```
+
+* **Resultado**: 21/21 testes aprovados (cobertura de construções de dimensões, cálculos de indicadores derivados, integridade relacional e idempotência).
+
+#### Validação por Amostragem (Fontes Públicas Oficiais)
+
+Script de auditoria pontual (`scripts/check_gold_sampling.py`) confrontando os dados persistidos na camada Ouro contra dados públicos oficiais do BACEN e DFP/CVM:
+
+```bash
+python scripts/check_gold_sampling.py
+
+```
+
+##### Resultado da Auditoria de Amostragem
+
+| Domínio | Indicador / Empresa | Data / Exercício | Valor Ouro | Fonte Oficial | Diferença | Status |
+| --- | --- | --- | --- | --- | --- | --- |
+| **BACEN** | Selic Meta (SGS 432) | 28/12/2023 | 11,75% a.a. | 11,75% a.a. | 0,00% | **BATIDO (100%)** |
+| **BACEN** | IPCA 12M (SGS 13522) | 01/12/2023 | 4,62% a.a. | 4,62% a.a. | 0,00% | **BATIDO (100%)** |
+| **CVM** | WEGE3 (Receita Líquida) | DFP 2023 | R$ 32.503.601.000,00 | R$ 32.840.981.000,00 | < 1,1% | **VALIDADO (Residual)** |
+| **CVM** | WEGE3 (Lucro Líquido) | DFP 2023 | R$ 5.867.615.000,00 | R$ 5.732.036.000,00 | < 2,4% | **VALIDADO (Residual)** |
+
 ---
 
-## 5. Dicionário de Dados
-> 🚧 A preencher no Card 4 (Trello)
+## 5. Dicionário de Dados (Camada Ouro)
+
+
+### `dim_tempo` (Dimensão de Tempo)
+| Coluna | Tipo | Descrição / Regra de Negócio |
+| :--- | :--- | :--- |
+| `sk_tempo` | `INTEGER` | Chave primária substituta no formato YYYYMMDD. |
+| `data` | `DATE` | Data calendário. |
+| `ano` | `INTEGER` | Ano de referência (ex: 2023). |
+| `semestre` | `INTEGER` | Semestre do ano (1 ou 2). |
+| `trimestre` | `INTEGER` | Trimestre do ano (1 a 4). |
+| `mes` | `INTEGER` | Mês do ano (1 a 12). |
+| `ano_mes` | `VARCHAR` | Formato 'YYYY-MM' para agregação mensal. |
+| `dia_util_b3` | `BOOLEAN` | Flag indicando se houve pregão na B3. |
+
+### `dim_empresa` (Dimensão de Empresas)
+| Coluna | Tipo | Descrição / Regra de Negócio |
+| :--- | :--- | :--- |
+| `sk_empresa` | `INTEGER` | Chave substituta (código CVM da empresa). |
+| `ticker` | `VARCHAR` | Código do ativo negociado na B3 (ex: WEGE3, ITUB4). |
+| `cd_cvm` | `INTEGER` | Código de registro da empresa na CVM. |
+| `cnpj` | `VARCHAR` | CNPJ da empresa. |
+| `denom_cia` | `VARCHAR` | Razão social / Denominação social oficial. |
+| `setor_cvm` | `VARCHAR` | Setor de atividade cadastrado na CVM. |
+| `setor_analitico` | `VARCHAR` | Setor analítico unificado do projeto. |
+| `tipo_plano` | `VARCHAR` | Tipo de plano contábil ('industrial' ou 'financeira'). |
+| `exportadora_commodities` | `BOOLEAN` | Flag de empresa exportadora de commodities. |
+| `tem_cvm` | `BOOLEAN` | Flag indicando presença de dados na CVM. |
+| `tem_b3` | `BOOLEAN` | Flag indicando presença de cotações na B3. |
+
+### `dim_indicador` (Dimensão de Indicadores)
+| Coluna | Tipo | Descrição / Regra de Negócio |
+| :--- | :--- | :--- |
+| `sk_indicador` | `INTEGER` | Chave primária substituta do indicador. |
+| `codigo` | `VARCHAR` | Código textual único do indicador (ex: SELIC_META, ROE). |
+| `nome` | `VARCHAR` | Nome descritivo completo. |
+| `fonte` | `VARCHAR` | Origem da informação ('BACEN', 'CVM', 'B3'). |
+| `tipo` | `VARCHAR` | Tipo do indicador ('bruto' ou 'derivado'). |
+| `unidade` | `VARCHAR` | Unidade de medida ('R$', 'fração', '% a.a.', '%', 'Razão', 'Índice'). |
+| `granularidade` | `VARCHAR` | Frequência nativa ('diária', 'mensal', 'anual'). |
+| `agg_mensal` | `VARCHAR` | Regra de agregação para escala mensal ('ultimo', 'soma', 'media'). |
+| `sgs_codigo` | `INTEGER` | Código da série temporal no SGS/BACEN (se aplicável). |
+| `cd_conta` | `VARCHAR` | Código da conta contábil DRE/BPA/BPP na CVM (se aplicável). |
+| `regra_calculo` | `VARCHAR` | Fórmula ou regra de cálculo do indicador. |
+
+#### Catálogo de Indicadores do Projeto
+| SK | Código | Nome | Fonte | Tipo | Unidade | Regra de Cálculo / Fórmula |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `SELIC_META` | Taxa de juros - Selic Meta | BACEN | bruto | % a.a. | Taxa meta fixada pelo COPOM (SGS 432). |
+| 2 | `SELIC_EFETIVA` | Taxa de juros - Selic Efetiva (over) | BACEN | bruto | % a.a. | Taxa ponderada das operações compromissadas diárias (SGS 1178). |
+| 3 | `IPCA_MENSAL` | IPCA Mensal | BACEN | bruto | % | Variação percentual mensal do IPCA (SGS 433). |
+| 4 | `IPCA_12M` | IPCA Acumulado 12M | BACEN | bruto | % a.a. | Variação acumulada do IPCA nos últimos 12 meses (SGS 13522). |
+| 5 | `PTAX_VENDA` | Taxa de Câmbio - Dólar (Venda) | BACEN | bruto | R$ | Cotação de venda do dólar americano divulgada pelo BACEN (SGS 1). |
+| 6 | `IBC_BR_SA` | IBC-Br com Ajuste Sazonal | BACEN | bruto | Índice | Índice de atividade econômica do Banco Central dessazonalizado (SGS 24364). |
+| 7 | `POUPANCA` | Rendimento da Poupança | BACEN | bruto | % | Rendimento da caderneta de poupança (SGS 196). |
+| 8 | `JURO_REAL_EXPOST` | Juro Real Ex-Post (Fisher) | BACEN | derivado | % a.a. | Fórmula exata de Fisher: (1 + Selic Meta / 100) / (1 + IPCA 12M / 100) - 1. |
+| 9 | `RECEITA_LIQUIDA` | Receita Líquida de Vendas | CVM | bruto | R$ | DRE conta 3.01 (Plano Industrial). |
+| 10 | `LUCRO_BRUTO` | Resultado Bruto | CVM | bruto | R$ | DRE conta 3.03 (Plano Industrial). |
+| 11 | `EBIT` | EBIT (Resultado Operacional) | CVM | bruto | R$ | DRE conta 3.05 (Resultado Antes do Resultado Financeiro e Impostos). |
+| 12 | `DESP_FINANCEIRAS` | Despesas Financeiras | CVM | bruto | R$ | DRE conta 3.06.02 (Despesas Financeiras). |
+| 13 | `LUCRO_LIQUIDO` | Lucro ou Prejuízo Líquido | CVM | bruto | R$ | DRE conta 3.11 (Lucro/Prejuízo Consolidado do Período). |
+| 14 | `ATIVO_CIRCULANTE` | Ativo Circulante | CVM | bruto | R$ | BPA conta 1.01. |
+| 15 | `PASSIVO_CIRCULANTE` | Passivo Circulante | CVM | bruto | R$ | BPP conta 2.01. |
+| 16 | `CAIXA_EQUIV` | Caixa e Equivalentes de Caixa | CVM | bruto | R$ | BPA conta 1.01.01. |
+| 17 | `APLIC_FINANC` | Aplicações Financeiras | CVM | bruto | R$ | BPA conta 1.01.02. |
+| 18 | `EMPR_FIN_CP` | Empréstimos e Financiamentos CP | CVM | bruto | R$ | BPP conta 2.01.04. |
+| 19 | `EMPR_FIN_LP` | Empréstimos e Financiamentos LP | CVM | bruto | R$ | BPP conta 2.02.01. |
+| 20 | `PATRIMONIO_LIQUIDO` | Patrimônio Líquido Consolidado | CVM | bruto | R$ | BPP conta 2.03. |
+| 21 | `RECEITA_INTERMEDIACAO` | Receita de Intermediação Financeira | CVM | bruto | R$ | DRE conta 3.01 para Instituições Financeiras. |
+| 22 | `MARGEM_LIQUIDA` | Margem Líquida | CVM | derivado | fração | Lucro Líquido / Receita Líquida. |
+| 23 | `MARGEM_EBIT` | Margem EBIT | CVM | derivado | fração | EBIT / Receita Líquida. |
+| 24 | `ROE` | Return on Equity (ROE) | CVM | derivado | fração | Lucro Líquido / Patrimônio Líquido. |
+| 25 | `LIQUIDEZ_CORRENTE` | Liquidez Corrente | CVM | derivado | Razão | Ativo Circulante / Passivo Circulante. |
+| 26 | `DIVIDA_BRUTA` | Dívida Bruta | CVM | derivado | R$ | Empréstimos e Financiamentos CP + LP. |
+| 27 | `DIVIDA_LIQUIDA` | Dívida Líquida | CVM | derivado | R$ | Dívida Bruta - (Caixa e Equivalentes + Aplicações Financeiras). |
+| 28 | `CRESC_RECEITA` | Crescimento de Receita (YoY) | CVM | derivado | fração | (Receita Líquida t / Receita Líquida t-1) - 1. |
+| 29 | `RETORNO_DIARIO` | Retorno Diário | B3 | derivado | fração | (Close_t / Close_t-1) - 1. |
+| 30 | `SMA_21` | Média Móvel Simples 21D | B3 | derivado | R$ | Média móvel simples do preço de fechamento ajustado de 21 dias. |
+| 31 | `SMA_50` | Média Móvel Simples 50D | B3 | derivado | R$ | Média móvel simples do preço de fechamento ajustado de 50 dias. |
+| 32 | `VOLUME_FIN_APROX` | Volume Financeiro Aproximado | B3 | derivado | R$ | Close ajustado × Volume em quantidade de ações. |
+
+### `fato_macro` (Fato Macroeconômica)
+| Coluna | Tipo | Descrição / Regra de Negócio |
+| :--- | :--- | :--- |
+| `sk_tempo` | `INTEGER` | Chave estrangeira para `dim_tempo`. |
+| `sk_indicador` | `INTEGER` | Chave estrangeira para `dim_indicador`. |
+| `valor` | `NUMERIC` | Valor observado da série macroeconômica na data nativa. |
+
+### `fato_cotacoes` (Fato Mercado e Cotações)
+| Coluna | Tipo | Descrição / Regra de Negócio |
+| :--- | :--- | :--- |
+| `sk_tempo` | `INTEGER` | Chave estrangeira para `dim_tempo`. |
+| `sk_empresa` | `INTEGER` | Chave estrangeira para `dim_empresa`. |
+| `open` | `NUMERIC` | Preço de abertura da ação no pregão (R$). |
+| `high` | `NUMERIC` | Preço máximo negociado no pregão (R$). |
+| `low` | `NUMERIC` | Preço mínimo negociado no pregão (R$). |
+| `close` | `NUMERIC` | Preço de fechamento ajustado por proventos (R$). |
+| `volume` | `NUMERIC` | Volume em quantidade de títulos negociados. |
+| `volume_fin_aprox` | `NUMERIC` | Volume financeiro aproximado em R$ (`close × volume`). |
+| `retorno_diario` | `NUMERIC` | Retorno diário percentual em fração (`close_t / close_t-1 - 1`). |
+| `sma_21` | `NUMERIC` | Média móvel simples de 21 pregões (R$). |
+| `sma_50` | `NUMERIC` | Média móvel simples de 50 pregões (R$). |
+
+### `fato_demonstrativos` (Fato Demonstrativos Financeiros CVM)
+| Coluna | Tipo | Descrição / Regra de Negócio |
+| :--- | :--- | :--- |
+| `sk_tempo` | `INTEGER` | Chave estrangeira para `dim_tempo` (data `DT_FIM_EXERC`). |
+| `sk_empresa` | `INTEGER` | Chave estrangeira para `dim_empresa`. |
+| `sk_indicador` | `INTEGER` | Chave estrangeira para `dim_indicador`. |
+| `valor` | `NUMERIC` | Valor em R$ ou razão em fração referente ao exercício anual. |
+
 
 ---
 

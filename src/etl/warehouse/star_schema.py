@@ -25,11 +25,7 @@ from src.models.contracts import PipelineParams, StepResult
 from src.utils.memory import release
 
 
-# ------------------------------------------------------------------------------
-# Seed de dim_indicador (BACEN, CVM e B3)
-# ------------------------------------------------------------------------------
 INDICADOR_SEED: List[Dict[str, Any]] = [
-    # BACEN Bruto
     {
         "sk_indicador": 1,
         "codigo": "SELIC_META",
@@ -121,7 +117,6 @@ INDICADOR_SEED: List[Dict[str, Any]] = [
         "cd_conta": None,
         "regra_calculo": "Rendimento da caderneta de poupança (SGS 196).",
     },
-    # BACEN Derivado
     {
         "sk_indicador": 8,
         "codigo": "JURO_REAL_EXPOST",
@@ -135,7 +130,6 @@ INDICADOR_SEED: List[Dict[str, Any]] = [
         "cd_conta": None,
         "regra_calculo": "Fórmula exata de Fisher: (1 + Selic Meta / 100) / (1 + IPCA 12M / 100) - 1.",
     },
-    # CVM Bruto
     {
         "sk_indicador": 9,
         "codigo": "RECEITA_LIQUIDA",
@@ -305,7 +299,6 @@ INDICADOR_SEED: List[Dict[str, Any]] = [
         "cd_conta": "3.01",
         "regra_calculo": "DRE conta 3.01 para Instituições Financeiras (não comparável com empresas industriais).",
     },
-    # CVM Derivado
     {
         "sk_indicador": 22,
         "codigo": "MARGEM_LIQUIDA",
@@ -397,7 +390,6 @@ INDICADOR_SEED: List[Dict[str, Any]] = [
         "cd_conta": None,
         "regra_calculo": "(Receita Líquida t / Receita Líquida t-1) - 1.",
     },
-    # B3 Derivado
     {
         "sk_indicador": 29,
         "codigo": "RETORNO_DIARIO",
@@ -451,6 +443,109 @@ INDICADOR_SEED: List[Dict[str, Any]] = [
         "regra_calculo": "Close ajustado * Volume em quantidade de ações.",
     },
 ]
+
+
+def dicionario_markdown() -> str:
+    """Gera documentação em formato Markdown do Dicionário de Dados da camada Ouro."""
+    lines = []
+    lines.append("## 5. Dicionário de Dados (Camada Ouro)")
+    lines.append("")
+
+    # dim_tempo
+    lines.append("### `dim_tempo` (Dimensão de Tempo)")
+    lines.append("| Coluna | Tipo | Descrição / Regra de Negócio |")
+    lines.append("| :--- | :--- | :--- |")
+    lines.append("| `sk_tempo` | `INTEGER` | Chave primária substituta no formato YYYYMMDD. |")
+    lines.append("| `data` | `DATE` | Data calendário. |")
+    lines.append("| `ano` | `INTEGER` | Ano de referência (ex: 2023). |")
+    lines.append("| `semestre` | `INTEGER` | Semestre do ano (1 ou 2). |")
+    lines.append("| `trimestre` | `INTEGER` | Trimestre do ano (1 a 4). |")
+    lines.append("| `mes` | `INTEGER` | Mês do ano (1 a 12). |")
+    lines.append("| `ano_mes` | `VARCHAR` | Formato 'YYYY-MM' para agregação mensal. |")
+    lines.append("| `dia_util_b3` | `BOOLEAN` | Flag indicando se houve pregão na B3. |")
+    lines.append("")
+
+    # dim_empresa
+    lines.append("### `dim_empresa` (Dimensão de Empresas)")
+    lines.append("| Coluna | Tipo | Descrição / Regra de Negócio |")
+    lines.append("| :--- | :--- | :--- |")
+    lines.append("| `sk_empresa` | `INTEGER` | Chave substituta (código CVM da empresa). |")
+    lines.append("| `ticker` | `VARCHAR` | Código do ativo negociado na B3 (ex: WEGE3, ITUB4). |")
+    lines.append("| `cd_cvm` | `INTEGER` | Código de registro da empresa na CVM. |")
+    lines.append("| `cnpj` | `VARCHAR` | CNPJ da empresa. |")
+    lines.append("| `denom_cia` | `VARCHAR` | Razão social / Denominação social oficial. |")
+    lines.append("| `setor_cvm` | `VARCHAR` | Setor de atividade cadastrado na CVM. |")
+    lines.append("| `setor_analitico` | `VARCHAR` | Setor analítico unificado do projeto. |")
+    lines.append("| `tipo_plano` | `VARCHAR` | Tipo de plano contábil ('industrial' ou 'financeira'). |")
+    lines.append("| `exportadora_commodities` | `BOOLEAN` | Flag de empresa exportadora de commodities. |")
+    lines.append("| `tem_cvm` | `BOOLEAN` | Flag indicando presença de dados na CVM. |")
+    lines.append("| `tem_b3` | `BOOLEAN` | Flag indicando presença de cotações na B3. |")
+    lines.append("")
+
+    # dim_indicador
+    lines.append("### `dim_indicador` (Dimensão de Indicadores)")
+    lines.append("| Coluna | Tipo | Descrição / Regra de Negócio |")
+    lines.append("| :--- | :--- | :--- |")
+    lines.append("| `sk_indicador` | `INTEGER` | Chave primária substituta do indicador. |")
+    lines.append("| `codigo` | `VARCHAR` | Código textual único do indicador (ex: SELIC_META, ROE). |")
+    lines.append("| `nome` | `VARCHAR` | Nome descritivo completo. |")
+    lines.append("| `fonte` | `VARCHAR` | Origem da informação ('BACEN', 'CVM', 'B3'). |")
+    lines.append("| `tipo` | `VARCHAR` | Tipo do indicador ('bruto' ou 'derivado'). |")
+    lines.append("| `unidade` | `VARCHAR` | Unidade de medida ('R$', 'fração', '% a.a.', '%', 'Razão', 'Índice'). |")
+    lines.append("| `granularidade` | `VARCHAR` | Frequência nativa ('diária', 'mensal', 'anual'). |")
+    lines.append("| `agg_mensal` | `VARCHAR` | Regra de agregação para escala mensal ('ultimo', 'soma', 'media'). |")
+    lines.append("| `sgs_codigo` | `INTEGER` | Código da série temporal no SGS/BACEN (se aplicável). |")
+    lines.append("| `cd_conta` | `VARCHAR` | Código da conta contábil DRE/BPA/BPP na CVM (se aplicável). |")
+    lines.append("| `regra_calculo` | `VARCHAR` | Fórmula ou regra de cálculo do indicador. |")
+    lines.append("")
+
+    # Catálogo de Indicadores
+    lines.append("#### Catálogo de Indicadores do Projeto")
+    lines.append("| SK | Código | Nome | Fonte | Tipo | Unidade | Regra de Cálculo / Fórmula |")
+    lines.append("| :--- | :--- | :--- | :--- | :--- | :--- | :--- |")
+    for ind in INDICADOR_SEED:
+        lines.append(
+            f"| {ind['sk_indicador']} | `{ind['codigo']}` | {ind['nome']} | {ind['fonte']} | {ind['tipo']} | {ind['unidade']} | {ind['regra_calculo']} |"
+        )
+    lines.append("")
+
+    # fato_macro
+    lines.append("### `fato_macro` (Fato Macroeconômica)")
+    lines.append("| Coluna | Tipo | Descrição / Regra de Negócio |")
+    lines.append("| :--- | :--- | :--- |")
+    lines.append("| `sk_tempo` | `INTEGER` | Chave estrangeira para `dim_tempo`. |")
+    lines.append("| `sk_indicador` | `INTEGER` | Chave estrangeira para `dim_indicador`. |")
+    lines.append("| `valor` | `NUMERIC` | Valor observado da série macroeconômica na data nativa. |")
+    lines.append("")
+
+    # fato_cotacoes
+    lines.append("### `fato_cotacoes` (Fato Mercado e Cotações)")
+    lines.append("| Coluna | Tipo | Descrição / Regra de Negócio |")
+    lines.append("| :--- | :--- | :--- |")
+    lines.append("| `sk_tempo` | `INTEGER` | Chave estrangeira para `dim_tempo`. |")
+    lines.append("| `sk_empresa` | `INTEGER` | Chave estrangeira para `dim_empresa`. |")
+    lines.append("| `open` | `NUMERIC` | Preço de abertura da ação no pregão (R$). |")
+    lines.append("| `high` | `NUMERIC` | Preço máximo negociado no pregão (R$). |")
+    lines.append("| `low` | `NUMERIC` | Preço mínimo negociado no pregão (R$). |")
+    lines.append("| `close` | `NUMERIC` | Preço de fechamento ajustado por proventos (R$). |")
+    lines.append("| `volume` | `NUMERIC` | Volume em quantidade de títulos negociados. |")
+    lines.append("| `volume_fin_aprox` | `NUMERIC` | Volume financeiro aproximado em R$ (`close × volume`). |")
+    lines.append("| `retorno_diario` | `NUMERIC` | Retorno diário percentual em fração (`close_t / close_t-1 - 1`). |")
+    lines.append("| `sma_21` | `NUMERIC` | Média móvel simples de 21 pregões (R$). |")
+    lines.append("| `sma_50` | `NUMERIC` | Média móvel simples de 50 pregões (R$). |")
+    lines.append("")
+
+    # fato_demonstrativos
+    lines.append("### `fato_demonstrativos` (Fato Demonstrativos Financeiros CVM)")
+    lines.append("| Coluna | Tipo | Descrição / Regra de Negócio |")
+    lines.append("| :--- | :--- | :--- |")
+    lines.append("| `sk_tempo` | `INTEGER` | Chave estrangeira para `dim_tempo` (data `DT_FIM_EXERC`). |")
+    lines.append("| `sk_empresa` | `INTEGER` | Chave estrangeira para `dim_empresa`. |")
+    lines.append("| `sk_indicador` | `INTEGER` | Chave estrangeira para `dim_indicador`. |")
+    lines.append("| `valor` | `NUMERIC` | Valor em R$ ou razão em fração referente ao exercício anual. |")
+    lines.append("")
+
+    return "\n".join(lines)
 
 
 class StarSchemaBuilder:
@@ -667,18 +762,28 @@ class StarSchemaBuilder:
             warnings.append("Prata silver.bacen_sgs vazia.")
             return pd.DataFrame(columns=["sk_tempo", "sk_indicador", "valor"]), warnings
 
+        sgs_col = "serie_codigo" if "serie_codigo" in df_bacen.columns else "sgs_codigo"
+        if sgs_col not in df_bacen.columns:
+            sgs_col = next((c for c in ["codigo_sgs", "codigo"] if c in df_bacen.columns), None)
+
+        if not sgs_col or "data" not in df_bacen.columns:
+            warnings.append("Colunas necessárias não encontradas na Prata silver.bacen_sgs.")
+            return pd.DataFrame(columns=["sk_tempo", "sk_indicador", "valor"]), warnings
+
         df_indicador = self.persistence.load("gold", "dim_indicador", modo=modo)
         bacen_ind = df_indicador[df_indicador["fonte"] == "BACEN"]
         sgs_map = {}
         for _, row in bacen_ind.dropna(subset=["sgs_codigo"]).iterrows():
             sgs_map[int(row["sgs_codigo"])] = int(row["sk_indicador"])
 
+        df_bacen["_sgs_int"] = pd.to_numeric(df_bacen[sgs_col], errors="coerce").fillna(-1).astype(int)
         df_bacen["data_dt"] = pd.to_datetime(df_bacen["data"])
         df_bacen["sk_tempo"] = df_bacen["data_dt"].dt.strftime("%Y%m%d").astype(int)
+        df_bacen["valor"] = pd.to_numeric(df_bacen["valor"], errors="coerce")
 
         fatos_brutos = []
         for sgs_code, sk_ind in sgs_map.items():
-            sub_df = df_bacen[df_bacen["sgs_codigo"] == sgs_code].copy()
+            sub_df = df_bacen[df_bacen["_sgs_int"] == int(sgs_code)].copy()
             if sub_df.empty:
                 continue
             sub_df["sk_indicador"] = sk_ind
@@ -686,10 +791,8 @@ class StarSchemaBuilder:
 
         df_fatos = pd.concat(fatos_brutos, ignore_index=True) if fatos_brutos else pd.DataFrame()
 
-        # Cálculo do indicador derivado JURO_REAL_EXPOST (sk_indicador = 8)
-        # Fisher: (1 + Selic_Meta_ultimo_dia / 100) / (1 + IPCA_12M_mes / 100) - 1
-        selic_meta_df = df_bacen[df_bacen["sgs_codigo"] == 432].copy()
-        ipca_12m_df = df_bacen[df_bacen["sgs_codigo"] == 13522].copy()
+        selic_meta_df = df_bacen[df_bacen["_sgs_int"] == 432].copy()
+        ipca_12m_df = df_bacen[df_bacen["_sgs_int"] == 13522].copy()
 
         fatos_juro_real = []
         if not selic_meta_df.empty and not ipca_12m_df.empty:
@@ -727,56 +830,6 @@ class StarSchemaBuilder:
 
         return df_fatos, warnings
 
-    def _build_fato_cotacoes(self, params: PipelineParams) -> Tuple[pd.DataFrame, List[str]]:
-        """Gera fato_cotacoes a partir de silver.b3_cotacoes calculando indicadores de mercado."""
-        modo = params.modo
-        warnings = []
-
-        df_b3 = self.persistence.load("silver", "b3_cotacoes", modo=modo)
-        if df_b3.empty:
-            warnings.append("Prata silver.b3_cotacoes vazia.")
-            return pd.DataFrame(), warnings
-
-        df_empresa = self.persistence.load("gold", "dim_empresa", modo=modo)
-        ticker_map = dict(zip(df_empresa["ticker"], df_empresa["sk_empresa"]))
-
-        fatos_b3 = []
-        df_b3["data_dt"] = pd.to_datetime(df_b3["data"])
-
-        for ticker, group in df_b3.groupby("ticker"):
-            if ticker not in ticker_map:
-                warnings.append(f"Ticker '{ticker}' em B3 não localizado em dim_empresa; descartando.")
-                continue
-
-            sk_empresa = ticker_map[ticker]
-            grp_sorted = group.sort_values("data_dt").copy()
-
-            close_s = grp_sorted["close"]
-            grp_sorted["retorno_diario"] = retorno_diario(close_s)
-            grp_sorted["sma_21"] = sma(close_s, 21)
-            grp_sorted["sma_50"] = sma(close_s, 50)
-            grp_sorted["volume_fin_aprox"] = grp_sorted["close"] * grp_sorted["volume"]
-            grp_sorted["sk_tempo"] = grp_sorted["data_dt"].dt.strftime("%Y%m%d").astype(int)
-            grp_sorted["sk_empresa"] = sk_empresa
-
-            cols = [
-                "sk_tempo",
-                "sk_empresa",
-                "open",
-                "high",
-                "low",
-                "close",
-                "volume",
-                "volume_fin_aprox",
-                "retorno_diario",
-                "sma_21",
-                "sma_50",
-            ]
-            fatos_b3.append(grp_sorted[cols])
-
-        df_result = pd.concat(fatos_b3, ignore_index=True) if fatos_b3 else pd.DataFrame()
-        return df_result, warnings
-
     def _build_fato_demonstrativos(self, params: PipelineParams) -> Tuple[pd.DataFrame, List[str]]:
         """Gera fato_demonstrativos a partir de silver.cvm_demonstrativos e calcula métricas fundamentalistas."""
         modo = params.modo
@@ -786,6 +839,14 @@ class StarSchemaBuilder:
         if df_cvm.empty:
             warnings.append("Prata silver.cvm_demonstrativos vazia.")
             return pd.DataFrame(), warnings
+
+        if "versao" in df_cvm.columns:
+            df_cvm["versao_num"] = pd.to_numeric(df_cvm["versao"], errors="coerce").fillna(1).astype(int)
+            df_cvm = df_cvm.sort_values("versao_num")
+
+        dedup_keys = [c for c in ["cd_cvm", "dt_fim_exerc", "demonstrativo", "cd_conta"] if c in df_cvm.columns]
+        if dedup_keys:
+            df_cvm = df_cvm.groupby(dedup_keys, as_index=False).last()
 
         df_empresa = self.persistence.load("gold", "dim_empresa", modo=modo)
         emp_map = {}
@@ -799,9 +860,15 @@ class StarSchemaBuilder:
         cvm_ind = df_indicador[df_indicador["fonte"] == "CVM"]
         key_to_sk = dict(zip(cvm_ind["codigo"], cvm_ind["sk_indicador"]))
 
+        cd_cvm_col = "cd_cvm" if "cd_cvm" in df_cvm.columns else "CD_CVM"
+        dt_fim_col = "dt_fim_exerc" if "dt_fim_exerc" in df_cvm.columns else "DT_FIM_EXERC"
+
+        df_cvm["_cd_cvm_int"] = pd.to_numeric(df_cvm[cd_cvm_col], errors="coerce").fillna(0).astype(int)
+        is_long = "cd_conta" in df_cvm.columns and "vl_conta" in df_cvm.columns
+
         fatos_cvm = []
 
-        for cd_cvm, group in df_cvm.groupby("cd_cvm"):
+        for cd_cvm, group in df_cvm.groupby("_cd_cvm_int"):
             cd_cvm_int = int(cd_cvm)
             if cd_cvm_int not in emp_map:
                 warnings.append(f"CD_CVM '{cd_cvm}' não localizado em dim_empresa; descartando.")
@@ -810,34 +877,88 @@ class StarSchemaBuilder:
             sk_empresa = emp_map[cd_cvm_int]["sk_empresa"]
             tipo_plano = emp_map[cd_cvm_int]["tipo_plano"]
 
-            group_sorted = group.sort_values("dt_fim_exerc").copy()
+            group_sorted = group.sort_values(dt_fim_col).copy()
             years_data = {}
 
-            # Extrai demonstrativos brutos por exercício
-            for _, row in group_sorted.iterrows():
-                dt_fim = pd.to_datetime(row["dt_fim_exerc"])
-                sk_tempo = int(dt_fim.strftime("%Y%m%d"))
-                ano = dt_fim.year
+            if is_long:
+                group_sorted["vl_conta"] = pd.to_numeric(group_sorted["vl_conta"], errors="coerce")
+                for dt_fim_val, sub_grp in group_sorted.groupby(dt_fim_col):
+                    dt_fim = pd.to_datetime(dt_fim_val)
+                    sk_tempo = int(dt_fim.strftime("%Y%m%d"))
+                    ano = dt_fim.year
 
-                yr_entry = {
-                    "sk_tempo": sk_tempo,
-                    "RECEITA_LIQUIDA": row.get("RECEITA_LIQUIDA", np.nan),
-                    "LUCRO_BRUTO": row.get("LUCRO_BRUTO", np.nan),
-                    "EBIT": row.get("EBIT", np.nan),
-                    "DESP_FINANCEIRAS": row.get("DESP_FINANCEIRAS", np.nan),
-                    "LUCRO_LIQUIDO": row.get("LUCRO_LIQUIDO", np.nan),
-                    "ATIVO_CIRCULANTE": row.get("ATIVO_CIRCULANTE", np.nan),
-                    "PASSIVO_CIRCULANTE": row.get("PASSIVO_CIRCULANTE", np.nan),
-                    "CAIXA_EQUIV": row.get("CAIXA_EQUIV", np.nan),
-                    "APLIC_FINANC": row.get("APLIC_FINANC", np.nan),
-                    "EMPR_FIN_CP": row.get("EMPR_FIN_CP", np.nan),
-                    "EMPR_FIN_LP": row.get("EMPR_FIN_LP", np.nan),
-                    "PATRIMONIO_LIQUIDO": row.get("PATRIMONIO_LIQUIDO", np.nan),
-                    "RECEITA_INTERMEDIACAO": row.get("RECEITA_INTERMEDIACAO", np.nan),
-                }
-                years_data[ano] = yr_entry
+                    sub_grp_clean = sub_grp.copy()
+                    sub_grp_clean["cd_conta_str"] = sub_grp_clean["cd_conta"].astype(str).str.strip()
+                    conta_map = dict(zip(sub_grp_clean["cd_conta_str"], sub_grp_clean["vl_conta"]))
 
-            # Calcula Crescimento de Receita (YoY)
+                    ind_code_map = {}
+                    if "codigo_indicador" in sub_grp_clean.columns:
+                        valid_ind = sub_grp_clean.dropna(subset=["codigo_indicador"])
+                        ind_code_map = dict(
+                            zip(
+                                valid_ind["codigo_indicador"].astype(str).str.strip(),
+                                valid_ind["vl_conta"],
+                            )
+                        )
+
+                    def _get_val_m(ind_key: str, conta_codes: List[str]) -> float:
+                        if ind_key in ind_code_map and not pd.isna(ind_code_map[ind_key]):
+                            return float(ind_code_map[ind_key])
+                        for code in conta_codes:
+                            if code in conta_map and not pd.isna(conta_map[code]):
+                                return float(conta_map[code])
+                        return np.nan
+
+                    yr_entry = {
+                        "sk_tempo": sk_tempo,
+                        "RECEITA_LIQUIDA": _get_val_m("RECEITA_LIQUIDA", ["3.01", "3.01.01"]),
+                        "LUCRO_BRUTO": _get_val_m("LUCRO_BRUTO", ["3.03"]),
+                        "EBIT": _get_val_m("EBIT", ["3.05"]),
+                        "DESP_FINANCEIRAS": _get_val_m("DESP_FINANCEIRAS", ["3.06.02", "3.06"]),
+                        "LUCRO_LIQUIDO": _get_val_m("LUCRO_LIQUIDO", ["3.11", "3.09", "3.07"]),
+                        "ATIVO_CIRCULANTE": _get_val_m("ATIVO_CIRCULANTE", ["1.01"]),
+                        "PASSIVO_CIRCULANTE": _get_val_m("PASSIVO_CIRCULANTE", ["2.01"]),
+                        "CAIXA_EQUIV": _get_val_m("CAIXA_EQUIV", ["1.01.01"]),
+                        "APLIC_FINANC": _get_val_m("APLIC_FINANC", ["1.01.02"]),
+                        "EMPR_FIN_CP": _get_val_m("EMPR_FIN_CP", ["2.01.04"]),
+                        "EMPR_FIN_LP": _get_val_m("EMPR_FIN_LP", ["2.02.01"]),
+                        "PATRIMONIO_LIQUIDO": _get_val_m("PATRIMONIO_LIQUIDO", ["2.03"]),
+                        "RECEITA_INTERMEDIACAO": _get_val_m("RECEITA_INTERMEDIACAO", ["3.01"]),
+                    }
+                    years_data[ano] = yr_entry
+            else:
+                col_map_lower = {str(c).lower(): c for c in df_cvm.columns}
+
+                def _get_val(r: pd.Series, key: str) -> Any:
+                    actual_col = col_map_lower.get(key.lower())
+                    if actual_col and actual_col in r:
+                        v = r[actual_col]
+                        return pd.to_numeric(v, errors="coerce") if not pd.isna(v) else np.nan
+                    return np.nan
+
+                for _, row in group_sorted.iterrows():
+                    dt_fim = pd.to_datetime(row[dt_fim_col])
+                    sk_tempo = int(dt_fim.strftime("%Y%m%d"))
+                    ano = dt_fim.year
+
+                    yr_entry = {
+                        "sk_tempo": sk_tempo,
+                        "RECEITA_LIQUIDA": _get_val(row, "RECEITA_LIQUIDA"),
+                        "LUCRO_BRUTO": _get_val(row, "LUCRO_BRUTO"),
+                        "EBIT": _get_val(row, "EBIT"),
+                        "DESP_FINANCEIRAS": _get_val(row, "DESP_FINANCEIRAS"),
+                        "LUCRO_LIQUIDO": _get_val(row, "LUCRO_LIQUIDO"),
+                        "ATIVO_CIRCULANTE": _get_val(row, "ATIVO_CIRCULANTE"),
+                        "PASSIVO_CIRCULANTE": _get_val(row, "PASSIVO_CIRCULANTE"),
+                        "CAIXA_EQUIV": _get_val(row, "CAIXA_EQUIV"),
+                        "APLIC_FINANC": _get_val(row, "APLIC_FINANC"),
+                        "EMPR_FIN_CP": _get_val(row, "EMPR_FIN_CP"),
+                        "EMPR_FIN_LP": _get_val(row, "EMPR_FIN_LP"),
+                        "PATRIMONIO_LIQUIDO": _get_val(row, "PATRIMONIO_LIQUIDO"),
+                        "RECEITA_INTERMEDIACAO": _get_val(row, "RECEITA_INTERMEDIACAO"),
+                    }
+                    years_data[ano] = yr_entry
+
             sorted_years = sorted(years_data.keys())
             rl_series = pd.Series(
                 [years_data[yr]["RECEITA_LIQUIDA"] for yr in sorted_years],
@@ -850,7 +971,6 @@ class StarSchemaBuilder:
                 sk_tempo = data["sk_tempo"]
 
                 if tipo_plano == "industrial":
-                    # Brutos Industriais
                     for key in [
                         "RECEITA_LIQUIDA",
                         "LUCRO_BRUTO",
@@ -876,7 +996,6 @@ class StarSchemaBuilder:
                                 }
                             )
 
-                    # Derivados Industriais
                     ml = margem_liquida(data["LUCRO_LIQUIDO"], data["RECEITA_LIQUIDA"])
                     if not pd.isna(ml):
                         fatos_cvm.append(
@@ -960,7 +1079,6 @@ class StarSchemaBuilder:
                         )
 
                 elif tipo_plano == "financeira":
-                    # Brutos Financeiros (D-07, ADR-09)
                     for key in ["LUCRO_LIQUIDO", "PATRIMONIO_LIQUIDO", "RECEITA_INTERMEDIACAO"]:
                         val = data[key]
                         if not pd.isna(val) and key in key_to_sk:
@@ -973,7 +1091,6 @@ class StarSchemaBuilder:
                                 }
                             )
 
-                    # ROE para Financeiras
                     r_oe = roe(data["LUCRO_LIQUIDO"], data["PATRIMONIO_LIQUIDO"])
                     if not pd.isna(r_oe):
                         fatos_cvm.append(
@@ -986,6 +1103,56 @@ class StarSchemaBuilder:
                         )
 
         df_result = pd.DataFrame(fatos_cvm) if fatos_cvm else pd.DataFrame()
+        return df_result, warnings
+
+    def _build_fato_cotacoes(self, params: PipelineParams) -> Tuple[pd.DataFrame, List[str]]:
+        """Gera fato_cotacoes a partir de silver.b3_cotacoes calculando indicadores de mercado."""
+        modo = params.modo
+        warnings = []
+
+        df_b3 = self.persistence.load("silver", "b3_cotacoes", modo=modo)
+        if df_b3.empty:
+            warnings.append("Prata silver.b3_cotacoes vazia.")
+            return pd.DataFrame(), warnings
+
+        df_empresa = self.persistence.load("gold", "dim_empresa", modo=modo)
+        ticker_map = dict(zip(df_empresa["ticker"], df_empresa["sk_empresa"]))
+
+        fatos_b3 = []
+        df_b3["data_dt"] = pd.to_datetime(df_b3["data"])
+
+        for ticker, group in df_b3.groupby("ticker"):
+            if ticker not in ticker_map:
+                warnings.append(f"Ticker '{ticker}' em B3 não localizado em dim_empresa; descartando.")
+                continue
+
+            sk_empresa = ticker_map[ticker]
+            grp_sorted = group.sort_values("data_dt").copy()
+
+            close_s = grp_sorted["close"]
+            grp_sorted["retorno_diario"] = retorno_diario(close_s)
+            grp_sorted["sma_21"] = sma(close_s, 21)
+            grp_sorted["sma_50"] = sma(close_s, 50)
+            grp_sorted["volume_fin_aprox"] = grp_sorted["close"] * grp_sorted["volume"]
+            grp_sorted["sk_tempo"] = grp_sorted["data_dt"].dt.strftime("%Y%m%d").astype(int)
+            grp_sorted["sk_empresa"] = sk_empresa
+
+            cols = [
+                "sk_tempo",
+                "sk_empresa",
+                "open",
+                "high",
+                "low",
+                "close",
+                "volume",
+                "volume_fin_aprox",
+                "retorno_diario",
+                "sma_21",
+                "sma_50",
+            ]
+            fatos_b3.append(grp_sorted[cols])
+
+        df_result = pd.concat(fatos_b3, ignore_index=True) if fatos_b3 else pd.DataFrame()
         return df_result, warnings
 
     def run_gold(self, source: str, params: PipelineParams) -> StepResult:
@@ -1020,7 +1187,6 @@ class StarSchemaBuilder:
             rows_count = len(df_fato)
             res = self.persistence.save("gold", nome_tabela, df_fato, partition_cols=partition_cols, modo=params.modo)
 
-            # Atualiza flags na dim_empresa ao final de B3 e CVM
             if source_lower in {"b3", "cvm"}:
                 self._update_dim_empresa_flags(source_lower, params)
 
