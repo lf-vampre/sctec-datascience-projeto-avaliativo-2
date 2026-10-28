@@ -1,4 +1,4 @@
-"""Testes de integração e unidade para a camada Prata (BacenCleaner, B3Cleaner e CvmCleaner).
+"""Testes de integração e unidade para a camada Prata (BacenCleaner, B3Cleaner, CvmCleaner e CadastroCleaner).
 
 Valida desacoplamento por fonte, ordem trocada de execução, idempotência e isolamento.
 """
@@ -10,8 +10,9 @@ import pytest
 from src.config import settings
 from src.etl.base import PipelineLogger
 from src.etl.cleaners.account_mapper import AccountMapper
-from src.etl.cleaners.bacen_cleaner import BacenCleaner
 from src.etl.cleaners.b3_cleaner import B3Cleaner
+from src.etl.cleaners.bacen_cleaner import BacenCleaner
+from src.etl.cleaners.cadastro_cleaner import CadastroCleaner
 from src.etl.cleaners.cvm_cleaner import CvmCleaner
 from src.models.contracts import PipelineParams
 
@@ -30,6 +31,52 @@ def params() -> PipelineParams:
         cvm_anos=[2021, 2022, 2023],
         is_sandbox=True,
     )
+
+
+# ------------------------------------------------------------------------------
+# Testes CadastroCleaner (STORY-018B)
+# ------------------------------------------------------------------------------
+
+def test_cadastro_cleaner_normalization_and_warnings(logger: PipelineLogger, params: PipelineParams) -> None:
+    df_bronze = pd.DataFrame({
+        "CD_CVM": ["14311", "14311", "906"],
+        "CNPJ_CIA": ["84.429.695/0001-11", "84.429.695/0001-11", "60.746.948/0001-12345"],  # CNPJ com tamanho inválido
+        "DENOM_SOC": ["WEG S.A.", "WEG S.A.", "BANCO BRADESCO S.A."],
+        "SIT": ["FASE OPERACIONAL", "FASE OPERACIONAL", "REGISTRO CANCELADO"],
+        "SETOR_ATIV": ["MAQUINARIOS", "MAQUINARIOS", "BANCOS"],
+        "DT_REG": ["1995-01-01", "1995-01-01", "1980-01-01"],
+    })
+
+    mock_storage = MagicMock()
+    mock_storage.load.return_value = df_bronze
+    mock_storage.save.return_value = {
+        "parquet_path": "data/silver/cvm_cadastro.parquet",
+        "rows": 2,
+        "neon_ok": False,
+        "warning": None,
+    }
+
+    cleaner = CadastroCleaner(logger=logger, storage_writer=mock_storage)
+    result = cleaner.clean(params)
+
+    assert result.ok is True
+    assert result.rows == 2
+    mock_storage.save.assert_called_once()
+
+    saved_df = mock_storage.save.call_args[1]["df"]
+    
+    # Validações de tratamento
+    assert "cnpj_limpo" in saved_df.columns
+    wege_row = saved_df[saved_df["cd_cvm"] == 14311].iloc[0]
+    assert wege_row["cnpj_limpo"] == "84429695000111"
+
+    # Validações de unicidade
+    assert len(saved_df[saved_df["cd_cvm"] == 14311]) == 1
+
+    # Validações de avisos (CNPJ inválido, duplicata, situação cancelada)
+    assert any("CNPJs com tamanho diferente" in w for w in result.warnings)
+    assert any("duplicatas" in w for w in result.warnings)
+    assert any("situação" in w for w in result.warnings)
 
 
 # ------------------------------------------------------------------------------
@@ -279,7 +326,7 @@ def test_cvm_cleaner_integration_with_account_mapper(logger: PipelineLogger, par
 
 
 # ------------------------------------------------------------------------------
-# Testes STORY-017: Desacoplamento, Idempotência, Ordem Trocada e Isolamento
+# Testes Desacoplamento, Idempotência, Ordem Trocada e Isolamento
 # ------------------------------------------------------------------------------
 
 def test_execution_order_independence(logger: PipelineLogger, params: PipelineParams) -> None:
