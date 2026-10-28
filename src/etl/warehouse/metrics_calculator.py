@@ -35,7 +35,7 @@ def retorno_diario(close: pd.Series) -> pd.Series:
     """Calcula o retorno diário percentual de uma série de preços de fechamento."""
     if close.empty:
         return pd.Series(dtype=float)
-    return close.pct_change()
+    return close.pct_change(fill_method=None)
 
 
 def retorno_acumulado(close: pd.Series) -> pd.Series:
@@ -200,7 +200,7 @@ def crescimento(serie_anual: pd.Series) -> pd.Series:
     """Calcula a variação percentual ano a ano de uma série temporal contábil."""
     if serie_anual.empty:
         return pd.Series(dtype=float)
-    return serie_anual.pct_change()
+    return serie_anual.pct_change(fill_method=None)
 
 
 # ------------------------------------------------------------------------------

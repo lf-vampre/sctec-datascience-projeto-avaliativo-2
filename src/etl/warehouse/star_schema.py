@@ -1,13 +1,25 @@
 """Construção e gestão das dimensões e fatos da camada Ouro (Star Schema)."""
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 
 from src.config import accounts, settings, universe
 from src.etl.base import PipelineLogger
+from src.etl.warehouse.metrics_calculator import (
+    crescimento,
+    divida_bruta,
+    divida_liquida,
+    juro_real_fisher,
+    liquidez_corrente,
+    margem_ebit,
+    margem_liquida,
+    retorno_diario,
+    roe,
+    sma,
+)
 from src.etl.warehouse.persistence import Persistence
 from src.models.contracts import PipelineParams, StepResult
 from src.utils.memory import release
@@ -300,12 +312,12 @@ INDICADOR_SEED: List[Dict[str, Any]] = [
         "nome": "Margem Líquida",
         "fonte": "CVM",
         "tipo": "derivado",
-        "unidade": "%",
+        "unidade": "fração",
         "granularidade": "anual",
         "agg_mensal": "ultimo",
         "sgs_codigo": None,
         "cd_conta": None,
-        "regra_calculo": "Lucro Líquido / Receita Líquida * 100.",
+        "regra_calculo": "Lucro Líquido / Receita Líquida (fração).",
     },
     {
         "sk_indicador": 23,
@@ -313,12 +325,12 @@ INDICADOR_SEED: List[Dict[str, Any]] = [
         "nome": "Margem EBIT",
         "fonte": "CVM",
         "tipo": "derivado",
-        "unidade": "%",
+        "unidade": "fração",
         "granularidade": "anual",
         "agg_mensal": "ultimo",
         "sgs_codigo": None,
         "cd_conta": None,
-        "regra_calculo": "EBIT / Receita Líquida * 100.",
+        "regra_calculo": "EBIT / Receita Líquida (fração).",
     },
     {
         "sk_indicador": 24,
@@ -326,12 +338,12 @@ INDICADOR_SEED: List[Dict[str, Any]] = [
         "nome": "Return on Equity (ROE)",
         "fonte": "CVM",
         "tipo": "derivado",
-        "unidade": "%",
+        "unidade": "fração",
         "granularidade": "anual",
         "agg_mensal": "ultimo",
         "sgs_codigo": None,
         "cd_conta": None,
-        "regra_calculo": "Lucro Líquido / Patrimônio Líquido (fim de exercício) * 100.",
+        "regra_calculo": "Lucro Líquido / Patrimônio Líquido (fim de exercício) (fração).",
     },
     {
         "sk_indicador": 25,
@@ -378,7 +390,7 @@ INDICADOR_SEED: List[Dict[str, Any]] = [
         "nome": "Crescimento de Receita (YoY)",
         "fonte": "CVM",
         "tipo": "derivado",
-        "unidade": "%",
+        "unidade": "fração",
         "granularidade": "anual",
         "agg_mensal": "ultimo",
         "sgs_codigo": None,
@@ -392,7 +404,7 @@ INDICADOR_SEED: List[Dict[str, Any]] = [
         "nome": "Retorno Diário",
         "fonte": "B3",
         "tipo": "derivado",
-        "unidade": "%",
+        "unidade": "fração",
         "granularidade": "diária",
         "agg_mensal": "soma",
         "sgs_codigo": None,
@@ -456,18 +468,15 @@ class StarSchemaBuilder:
         """Gera dim_tempo diária cobrindo de 2020-12-31 até o maior período selecionado."""
         modo = params.modo
 
-        # Define data inicial mínima garantindo 2020-12-31 para deltas de 2021
         min_date_str = min("2020-12-31", params.bacen_periodo[0], params.b3_periodo[0])
         max_date_str = max(params.bacen_periodo[1], params.b3_periodo[1])
 
-        # Se houver anos CVM maiores, expande a data final para 31/12 do maior ano
         if params.cvm_anos:
             max_cvm_year = max(params.cvm_anos)
             cvm_end = f"{max_cvm_year}-12-31"
             if cvm_end > max_date_str:
                 max_date_str = cvm_end
 
-        # Carrega datas de pregão da Prata B3 para determinar dia_util_b3
         df_b3 = self.persistence.load("silver", "b3_cotacoes", columns=["data"], modo=modo)
         b3_dates = set()
         if not df_b3.empty and "data" in df_b3.columns:
@@ -580,7 +589,6 @@ class StarSchemaBuilder:
 
             warnings = list(df_empresa.attrs.get("warnings", []))
 
-            # Salva dimensões (substituição integral)
             res_tempo = self.persistence.save("gold", "dim_tempo", df_tempo, modo=params.modo)
             res_empresa = self.persistence.save("gold", "dim_empresa", df_empresa, modo=params.modo)
             res_indicador = self.persistence.save("gold", "dim_indicador", df_indicador, modo=params.modo)
@@ -613,6 +621,430 @@ class StarSchemaBuilder:
             duration = time.time() - start_time
             err_msg = str(e)
             self.logger.emit("ERROR", "StarSchemaBuilder", "FAILURE", f"Falha ao criar dimensões: {err_msg}")
+            return StepResult(
+                step_id=step_id,
+                ok=False,
+                rows=0,
+                paths=[],
+                duration_s=duration,
+                error=err_msg,
+            )
+        finally:
+            release()
+
+    def _ensure_dims_exist(self, modo: str) -> bool:
+        """Garante que as dimensões da Ouro existem antes de popular fatos."""
+        df_tempo = self.persistence.load("gold", "dim_tempo", modo=modo)
+        df_empresa = self.persistence.load("gold", "dim_empresa", modo=modo)
+        df_indicador = self.persistence.load("gold", "dim_indicador", modo=modo)
+
+        return not df_tempo.empty and not df_empresa.empty and not df_indicador.empty
+
+    def _update_dim_empresa_flags(self, source: str, params: PipelineParams) -> None:
+        """Atualiza unicamente as flags tem_b3 e tem_cvm na dim_empresa sem alterar chaves."""
+        df_empresa = self.persistence.load("gold", "dim_empresa", modo=params.modo)
+        if df_empresa.empty:
+            return
+
+        if source == "b3":
+            df_b3 = self.persistence.load("silver", "b3_cotacoes", columns=["ticker"], modo=params.modo)
+            b3_presentes = set(df_b3["ticker"].unique()) if not df_b3.empty else set()
+            df_empresa["tem_b3"] = df_empresa["ticker"].isin(b3_presentes)
+        elif source == "cvm":
+            df_cvm = self.persistence.load("silver", "cvm_demonstrativos", columns=["cd_cvm"], modo=params.modo)
+            cvm_presentes = set(df_cvm["cd_cvm"].unique()) if not df_cvm.empty else set()
+            df_empresa["tem_cvm"] = df_empresa["cd_cvm"].isin(cvm_presentes)
+
+        self.persistence.save("gold", "dim_empresa", df_empresa, modo=params.modo)
+
+    def _build_fato_macro(self, params: PipelineParams) -> Tuple[pd.DataFrame, List[str]]:
+        """Gera fato_macro a partir de silver.bacen_sgs e calcula JURO_REAL_EXPOST por Fisher."""
+        modo = params.modo
+        warnings = []
+
+        df_bacen = self.persistence.load("silver", "bacen_sgs", modo=modo)
+        if df_bacen.empty:
+            warnings.append("Prata silver.bacen_sgs vazia.")
+            return pd.DataFrame(columns=["sk_tempo", "sk_indicador", "valor"]), warnings
+
+        df_indicador = self.persistence.load("gold", "dim_indicador", modo=modo)
+        bacen_ind = df_indicador[df_indicador["fonte"] == "BACEN"]
+        sgs_map = {}
+        for _, row in bacen_ind.dropna(subset=["sgs_codigo"]).iterrows():
+            sgs_map[int(row["sgs_codigo"])] = int(row["sk_indicador"])
+
+        df_bacen["data_dt"] = pd.to_datetime(df_bacen["data"])
+        df_bacen["sk_tempo"] = df_bacen["data_dt"].dt.strftime("%Y%m%d").astype(int)
+
+        fatos_brutos = []
+        for sgs_code, sk_ind in sgs_map.items():
+            sub_df = df_bacen[df_bacen["sgs_codigo"] == sgs_code].copy()
+            if sub_df.empty:
+                continue
+            sub_df["sk_indicador"] = sk_ind
+            fatos_brutos.append(sub_df[["sk_tempo", "sk_indicador", "valor"]])
+
+        df_fatos = pd.concat(fatos_brutos, ignore_index=True) if fatos_brutos else pd.DataFrame()
+
+        # Cálculo do indicador derivado JURO_REAL_EXPOST (sk_indicador = 8)
+        # Fisher: (1 + Selic_Meta_ultimo_dia / 100) / (1 + IPCA_12M_mes / 100) - 1
+        selic_meta_df = df_bacen[df_bacen["sgs_codigo"] == 432].copy()
+        ipca_12m_df = df_bacen[df_bacen["sgs_codigo"] == 13522].copy()
+
+        fatos_juro_real = []
+        if not selic_meta_df.empty and not ipca_12m_df.empty:
+            selic_meta_df["ano_mes"] = selic_meta_df["data_dt"].dt.strftime("%Y-%m")
+            selic_monthly = selic_meta_df.sort_values("data_dt").groupby("ano_mes").last().reset_index()
+
+            ipca_12m_df["ano_mes"] = ipca_12m_df["data_dt"].dt.strftime("%Y-%m")
+            ipca_monthly = ipca_12m_df.groupby("ano_mes").last().reset_index()
+
+            merged = pd.merge(
+                selic_monthly[["ano_mes", "valor"]],
+                ipca_monthly[["ano_mes", "valor"]],
+                on="ano_mes",
+                suffixes=("_selic", "_ipca"),
+            )
+
+            for _, row in merged.iterrows():
+                ano_mes = str(row["ano_mes"])
+                dt_day1 = pd.to_datetime(f"{ano_mes}-01")
+                sk_tempo = int(dt_day1.strftime("%Y%m%d"))
+
+                val_fisher = juro_real_fisher(row["valor_selic"], row["valor_ipca"])
+                if not pd.isna(val_fisher):
+                    fatos_juro_real.append(
+                        {
+                            "sk_tempo": sk_tempo,
+                            "sk_indicador": 8,
+                            "valor": float(val_fisher),
+                        }
+                    )
+
+        if fatos_juro_real:
+            df_juro_real = pd.DataFrame(fatos_juro_real)
+            df_fatos = pd.concat([df_fatos, df_juro_real], ignore_index=True)
+
+        return df_fatos, warnings
+
+    def _build_fato_cotacoes(self, params: PipelineParams) -> Tuple[pd.DataFrame, List[str]]:
+        """Gera fato_cotacoes a partir de silver.b3_cotacoes calculando indicadores de mercado."""
+        modo = params.modo
+        warnings = []
+
+        df_b3 = self.persistence.load("silver", "b3_cotacoes", modo=modo)
+        if df_b3.empty:
+            warnings.append("Prata silver.b3_cotacoes vazia.")
+            return pd.DataFrame(), warnings
+
+        df_empresa = self.persistence.load("gold", "dim_empresa", modo=modo)
+        ticker_map = dict(zip(df_empresa["ticker"], df_empresa["sk_empresa"]))
+
+        fatos_b3 = []
+        df_b3["data_dt"] = pd.to_datetime(df_b3["data"])
+
+        for ticker, group in df_b3.groupby("ticker"):
+            if ticker not in ticker_map:
+                warnings.append(f"Ticker '{ticker}' em B3 não localizado em dim_empresa; descartando.")
+                continue
+
+            sk_empresa = ticker_map[ticker]
+            grp_sorted = group.sort_values("data_dt").copy()
+
+            close_s = grp_sorted["close"]
+            grp_sorted["retorno_diario"] = retorno_diario(close_s)
+            grp_sorted["sma_21"] = sma(close_s, 21)
+            grp_sorted["sma_50"] = sma(close_s, 50)
+            grp_sorted["volume_fin_aprox"] = grp_sorted["close"] * grp_sorted["volume"]
+            grp_sorted["sk_tempo"] = grp_sorted["data_dt"].dt.strftime("%Y%m%d").astype(int)
+            grp_sorted["sk_empresa"] = sk_empresa
+
+            cols = [
+                "sk_tempo",
+                "sk_empresa",
+                "open",
+                "high",
+                "low",
+                "close",
+                "volume",
+                "volume_fin_aprox",
+                "retorno_diario",
+                "sma_21",
+                "sma_50",
+            ]
+            fatos_b3.append(grp_sorted[cols])
+
+        df_result = pd.concat(fatos_b3, ignore_index=True) if fatos_b3 else pd.DataFrame()
+        return df_result, warnings
+
+    def _build_fato_demonstrativos(self, params: PipelineParams) -> Tuple[pd.DataFrame, List[str]]:
+        """Gera fato_demonstrativos a partir de silver.cvm_demonstrativos e calcula métricas fundamentalistas."""
+        modo = params.modo
+        warnings = []
+
+        df_cvm = self.persistence.load("silver", "cvm_demonstrativos", modo=modo)
+        if df_cvm.empty:
+            warnings.append("Prata silver.cvm_demonstrativos vazia.")
+            return pd.DataFrame(), warnings
+
+        df_empresa = self.persistence.load("gold", "dim_empresa", modo=modo)
+        emp_map = {}
+        for _, row in df_empresa.iterrows():
+            emp_map[int(row["cd_cvm"])] = {
+                "sk_empresa": int(row["sk_empresa"]),
+                "tipo_plano": str(row["tipo_plano"]),
+            }
+
+        df_indicador = self.persistence.load("gold", "dim_indicador", modo=modo)
+        cvm_ind = df_indicador[df_indicador["fonte"] == "CVM"]
+        key_to_sk = dict(zip(cvm_ind["codigo"], cvm_ind["sk_indicador"]))
+
+        fatos_cvm = []
+
+        for cd_cvm, group in df_cvm.groupby("cd_cvm"):
+            cd_cvm_int = int(cd_cvm)
+            if cd_cvm_int not in emp_map:
+                warnings.append(f"CD_CVM '{cd_cvm}' não localizado em dim_empresa; descartando.")
+                continue
+
+            sk_empresa = emp_map[cd_cvm_int]["sk_empresa"]
+            tipo_plano = emp_map[cd_cvm_int]["tipo_plano"]
+
+            group_sorted = group.sort_values("dt_fim_exerc").copy()
+            years_data = {}
+
+            # Extrai demonstrativos brutos por exercício
+            for _, row in group_sorted.iterrows():
+                dt_fim = pd.to_datetime(row["dt_fim_exerc"])
+                sk_tempo = int(dt_fim.strftime("%Y%m%d"))
+                ano = dt_fim.year
+
+                yr_entry = {
+                    "sk_tempo": sk_tempo,
+                    "RECEITA_LIQUIDA": row.get("RECEITA_LIQUIDA", np.nan),
+                    "LUCRO_BRUTO": row.get("LUCRO_BRUTO", np.nan),
+                    "EBIT": row.get("EBIT", np.nan),
+                    "DESP_FINANCEIRAS": row.get("DESP_FINANCEIRAS", np.nan),
+                    "LUCRO_LIQUIDO": row.get("LUCRO_LIQUIDO", np.nan),
+                    "ATIVO_CIRCULANTE": row.get("ATIVO_CIRCULANTE", np.nan),
+                    "PASSIVO_CIRCULANTE": row.get("PASSIVO_CIRCULANTE", np.nan),
+                    "CAIXA_EQUIV": row.get("CAIXA_EQUIV", np.nan),
+                    "APLIC_FINANC": row.get("APLIC_FINANC", np.nan),
+                    "EMPR_FIN_CP": row.get("EMPR_FIN_CP", np.nan),
+                    "EMPR_FIN_LP": row.get("EMPR_FIN_LP", np.nan),
+                    "PATRIMONIO_LIQUIDO": row.get("PATRIMONIO_LIQUIDO", np.nan),
+                    "RECEITA_INTERMEDIACAO": row.get("RECEITA_INTERMEDIACAO", np.nan),
+                }
+                years_data[ano] = yr_entry
+
+            # Calcula Crescimento de Receita (YoY)
+            sorted_years = sorted(years_data.keys())
+            rl_series = pd.Series(
+                [years_data[yr]["RECEITA_LIQUIDA"] for yr in sorted_years],
+                index=sorted_years,
+            )
+            cresc_series = crescimento(rl_series)
+
+            for i, yr in enumerate(sorted_years):
+                data = years_data[yr]
+                sk_tempo = data["sk_tempo"]
+
+                if tipo_plano == "industrial":
+                    # Brutos Industriais
+                    for key in [
+                        "RECEITA_LIQUIDA",
+                        "LUCRO_BRUTO",
+                        "EBIT",
+                        "DESP_FINANCEIRAS",
+                        "LUCRO_LIQUIDO",
+                        "ATIVO_CIRCULANTE",
+                        "PASSIVO_CIRCULANTE",
+                        "CAIXA_EQUIV",
+                        "APLIC_FINANC",
+                        "EMPR_FIN_CP",
+                        "EMPR_FIN_LP",
+                        "PATRIMONIO_LIQUIDO",
+                    ]:
+                        val = data[key]
+                        if not pd.isna(val) and key in key_to_sk:
+                            fatos_cvm.append(
+                                {
+                                    "sk_tempo": sk_tempo,
+                                    "sk_empresa": sk_empresa,
+                                    "sk_indicador": key_to_sk[key],
+                                    "valor": float(val),
+                                }
+                            )
+
+                    # Derivados Industriais
+                    ml = margem_liquida(data["LUCRO_LIQUIDO"], data["RECEITA_LIQUIDA"])
+                    if not pd.isna(ml):
+                        fatos_cvm.append(
+                            {
+                                "sk_tempo": sk_tempo,
+                                "sk_empresa": sk_empresa,
+                                "sk_indicador": key_to_sk["MARGEM_LIQUIDA"],
+                                "valor": float(ml),
+                            }
+                        )
+
+                    me = margem_ebit(data["EBIT"], data["RECEITA_LIQUIDA"])
+                    if not pd.isna(me):
+                        fatos_cvm.append(
+                            {
+                                "sk_tempo": sk_tempo,
+                                "sk_empresa": sk_empresa,
+                                "sk_indicador": key_to_sk["MARGEM_EBIT"],
+                                "valor": float(me),
+                            }
+                        )
+
+                    r_oe = roe(data["LUCRO_LIQUIDO"], data["PATRIMONIO_LIQUIDO"])
+                    if not pd.isna(r_oe):
+                        fatos_cvm.append(
+                            {
+                                "sk_tempo": sk_tempo,
+                                "sk_empresa": sk_empresa,
+                                "sk_indicador": key_to_sk["ROE"],
+                                "valor": float(r_oe),
+                            }
+                        )
+
+                    lc = liquidez_corrente(data["ATIVO_CIRCULANTE"], data["PASSIVO_CIRCULANTE"])
+                    if not pd.isna(lc):
+                        fatos_cvm.append(
+                            {
+                                "sk_tempo": sk_tempo,
+                                "sk_empresa": sk_empresa,
+                                "sk_indicador": key_to_sk["LIQUIDEZ_CORRENTE"],
+                                "valor": float(lc),
+                            }
+                        )
+
+                    db_val = divida_bruta(data["EMPR_FIN_CP"], data["EMPR_FIN_LP"])
+                    if not pd.isna(db_val):
+                        fatos_cvm.append(
+                            {
+                                "sk_tempo": sk_tempo,
+                                "sk_empresa": sk_empresa,
+                                "sk_indicador": key_to_sk["DIVIDA_BRUTA"],
+                                "valor": float(db_val),
+                            }
+                        )
+
+                    dl_val = divida_liquida(
+                        data["EMPR_FIN_CP"],
+                        data["EMPR_FIN_LP"],
+                        data["CAIXA_EQUIV"],
+                        data["APLIC_FINANC"],
+                    )
+                    if not pd.isna(dl_val):
+                        fatos_cvm.append(
+                            {
+                                "sk_tempo": sk_tempo,
+                                "sk_empresa": sk_empresa,
+                                "sk_indicador": key_to_sk["DIVIDA_LIQUIDA"],
+                                "valor": float(dl_val),
+                            }
+                        )
+
+                    cresc_val = cresc_series.iloc[i]
+                    if not pd.isna(cresc_val):
+                        fatos_cvm.append(
+                            {
+                                "sk_tempo": sk_tempo,
+                                "sk_empresa": sk_empresa,
+                                "sk_indicador": key_to_sk["CRESC_RECEITA"],
+                                "valor": float(cresc_val),
+                            }
+                        )
+
+                elif tipo_plano == "financeira":
+                    # Brutos Financeiros (D-07, ADR-09)
+                    for key in ["LUCRO_LIQUIDO", "PATRIMONIO_LIQUIDO", "RECEITA_INTERMEDIACAO"]:
+                        val = data[key]
+                        if not pd.isna(val) and key in key_to_sk:
+                            fatos_cvm.append(
+                                {
+                                    "sk_tempo": sk_tempo,
+                                    "sk_empresa": sk_empresa,
+                                    "sk_indicador": key_to_sk[key],
+                                    "valor": float(val),
+                                }
+                            )
+
+                    # ROE para Financeiras
+                    r_oe = roe(data["LUCRO_LIQUIDO"], data["PATRIMONIO_LIQUIDO"])
+                    if not pd.isna(r_oe):
+                        fatos_cvm.append(
+                            {
+                                "sk_tempo": sk_tempo,
+                                "sk_empresa": sk_empresa,
+                                "sk_indicador": key_to_sk["ROE"],
+                                "valor": float(r_oe),
+                            }
+                        )
+
+        df_result = pd.DataFrame(fatos_cvm) if fatos_cvm else pd.DataFrame()
+        return df_result, warnings
+
+    def run_gold(self, source: str, params: PipelineParams) -> StepResult:
+        """Executa a construção e gravação dos fatos da Ouro para a fonte especificada."""
+        start_time = time.time()
+        source_lower = source.lower()
+        step_id = f"run_gold_{source_lower}"
+
+        self.logger.emit("INFO", "StarSchemaBuilder", "START", f"Iniciando run_gold('{source_lower}') ({params.modo})")
+
+        if not self._ensure_dims_exist(params.modo):
+            err_msg = "Dimensões do Star Schema ausentes na Ouro. Execute 'run_dims' antes de chamar 'run_gold'."
+            self.logger.emit("ERROR", "StarSchemaBuilder", "FAILURE", err_msg)
+            return StepResult(step_id=step_id, ok=False, rows=0, paths=[], duration_s=0.0, error=err_msg)
+
+        try:
+            if source_lower == "bacen":
+                df_fato, warnings = self._build_fato_macro(params)
+                nome_tabela = "fato_macro"
+                partition_cols = ["sk_indicador"]
+            elif source_lower == "b3":
+                df_fato, warnings = self._build_fato_cotacoes(params)
+                nome_tabela = "fato_cotacoes"
+                partition_cols = ["sk_empresa"]
+            elif source_lower == "cvm":
+                df_fato, warnings = self._build_fato_demonstrativos(params)
+                nome_tabela = "fato_demonstrativos"
+                partition_cols = ["sk_empresa"]
+            else:
+                raise ValueError(f"Fonte Ouro desconhecida: '{source}'. Esperadas: 'bacen', 'b3', 'cvm'")
+
+            rows_count = len(df_fato)
+            res = self.persistence.save("gold", nome_tabela, df_fato, partition_cols=partition_cols, modo=params.modo)
+
+            # Atualiza flags na dim_empresa ao final de B3 e CVM
+            if source_lower in {"b3", "cvm"}:
+                self._update_dim_empresa_flags(source_lower, params)
+
+            duration = time.time() - start_time
+            self.logger.emit(
+                "INFO",
+                "StarSchemaBuilder",
+                "END",
+                f"Tabela {nome_tabela} atualizada com {rows_count} linhas em {duration:.2f}s",
+            )
+
+            return StepResult(
+                step_id=step_id,
+                ok=True,
+                rows=rows_count,
+                paths=[res.get("parquet_path", "")],
+                duration_s=duration,
+                warnings=warnings,
+            )
+
+        except Exception as e:
+            duration = time.time() - start_time
+            err_msg = str(e)
+            self.logger.emit("ERROR", "StarSchemaBuilder", "FAILURE", f"Falha no run_gold('{source_lower}'): {err_msg}")
             return StepResult(
                 step_id=step_id,
                 ok=False,
