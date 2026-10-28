@@ -1,8 +1,38 @@
 {
   "fato_macro": {
-    "linhas": 1,
-    "run_id": "811f7e91-bba5-4a1e-aa25-7d2237e51aea",
-    "atualizado_em": "2026-10-27T23:05:40.034178",
+    "linhas": 4636,
+    "run_id": "b75b9f70-cf2f-4048-960f-fd55fb73c77d",
+    "atualizado_em": "2026-10-27T23:59:55.981633",
+    "neon_ok": true
+  },
+  "dim_tempo": {
+    "linhas": 1827,
+    "run_id": "d579fe36-2f79-44f2-a929-23ed80b5eba8",
+    "atualizado_em": "2026-10-27T23:59:47.647083",
+    "neon_ok": true
+  },
+  "dim_empresa": {
+    "linhas": 19,
+    "run_id": "87cd682a-092d-4320-b7b9-8c389e3aac6e",
+    "atualizado_em": "2026-10-28T00:00:17.592827",
+    "neon_ok": true
+  },
+  "dim_indicador": {
+    "linhas": 32,
+    "run_id": "74a25b10-9a9c-4a16-ae5a-4c3cbdad060b",
+    "atualizado_em": "2026-10-27T23:59:49.685995",
+    "neon_ok": true
+  },
+  "fato_cotacoes": {
+    "linhas": 21097,
+    "run_id": "e32b1d51-4fee-4df7-b2eb-d4c392d98136",
+    "atualizado_em": "2026-10-28T00:00:04.255224",
+    "neon_ok": true
+  },
+  "fato_demonstrativos": {
+    "linhas": 1033,
+    "run_id": "05403cf8-783a-4f46-a9f3-c87901d49c59",
+    "atualizado_em": "2026-10-28T00:00:14.715526",
     "neon_ok": true
   }
 }
