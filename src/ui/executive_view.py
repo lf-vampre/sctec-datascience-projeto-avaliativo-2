@@ -1,11 +1,13 @@
 import streamlit as st
-from src.ui.state import voltar_landing
+from src.ui.components.alerts import aviso
+from src.ui.components.header import header
 
 
 def render() -> None:
-    """Renderiza a view temporária do BI Executivo."""
-    st.title("📊 Data App BI Executivo")
-    st.info("Módulo em construção.")
-    if st.button("⬅️ Voltar ao Início", key="btn_voltar_executive"):
-        voltar_landing()
-        st.rerun()
+    """Renderiza a view temporária do BI Executivo com componentes base."""
+    header(
+        titulo="📊 Data App BI Executivo",
+        subtitulo="Painéis analíticos e visões consolidadas da Tríade.",
+        mostrar_botao_voltar=True,
+    )
+    aviso("info", "Módulo em construção. Em breve painéis analíticos interativos.")
