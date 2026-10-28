@@ -315,7 +315,25 @@ python scripts/check_gold_sampling.py
 ---
 
 ## 10. Demonstração do Data App (Streamlit)
-> 🚧 A preencher no Card 12 (Trello)
+
+### 10.1. Arquitetura de Interface e UX (Streamlit)
+
+#### 10.1.1. Landing Page e Roteamento Sob Demanda (Lazy Loading)
+- **Roteamento por `st.session_state`**: A navegação entre a Landing Page, o DataOps Control Tower e o BI Executivo ocorre sem uso de páginas nativas multipage do Streamlit, mantendo o controle centralizado em `app.py` através da chave `st.session_state["modo"]`.
+- **Carga Sob Demanda (ADR-11, RNF-01)**: Módulos pesados (`src.etl`, `src.ui.data_loader`, `src.ui.dashboards`, `plotly`) não são importados na inicialização do aplicativo. Os imports das visões (`dataops_view` e `executive_view`) ocorrem estritamente dentro dos blocos condicionais de roteamento, garantindo zero alocação de memória e zero conexões a banco antes do usuário selecionar explicitamente o modo de operação.
+
+#### 10.1.2. Gestão do Estado de Sessão (`src/ui/state.py`)
+- **Centralização de Defaults**: O módulo `src/ui/state.py` inicializa e mantém o dicionário de estado com chaves globais padrão:
+  - `modo`: Roteamento da aplicação (`None` para Landing, `"dataops"`, `"bi"`).
+  - `aba_ativa`: Controle de navegação horizontal no BI.
+  - `filtros`: Estrutura de filtros globais pré-configurados.
+- **Transição de Navegação**: Funções puras (`ir_para(modo)`, `voltar_landing()`) alteram o estado de forma previsível e isolada de regras de apresentação.
+
+#### 10.1.3. Camada de Estilo Isolada e Design System (`src/config/theme.py` & `src/ui/styles/`)
+- **Fonte Única da Verdade (`theme.py`)**: Tokens de design (paleta de cores, tipografia, geometria, elevações) são centralizados no Python e exportados dinamicamente para variáveis CSS (`:root`).
+- **CSS Isolado (`theme.css`)**: Estilização baseada em classes customizadas com prefixo `.fx-` (`.fx-card`, `.fx-hero`, `.fx-badge`, `.fx-header-title`), evitando contaminação e colisões com o CSS interno do Streamlit.
+- **Injeção Resiliente (`style_loader.py`)**: A função `inject_css()` injeta o arquivo de estilos isolados via `st.markdown(..., unsafe_allow_html=True)` com tratamento de exceção resiliente a falhas de I/O.
+- **Sincronia com Tema Nativo**: O arquivo `.streamlit/config.toml` reflete rigorosamente as cores e fontes definidas nos tokens do projeto.
 
 ---
 
