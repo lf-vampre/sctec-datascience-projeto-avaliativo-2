@@ -1,10 +1,12 @@
-"""Testes unitários e de integração para a camada Ouro (Star Schema, Metrics Calculator e Fatos)."""
+"""Testes unitários e de integração para a camada Ouro (Star Schema, Metrics Calculator, Fatos e Persistência)."""
+
+import json
+import shutil
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
 import pytest
-import shutil
-from src.utils import paths
 
 from src.etl.warehouse.metrics_calculator import (
     base100,
@@ -30,6 +32,7 @@ from src.etl.warehouse.metrics_calculator import (
 from src.etl.warehouse.persistence import Persistence
 from src.etl.warehouse.star_schema import StarSchemaBuilder
 from src.models.contracts import PipelineParams
+from src.utils import paths
 
 
 @pytest.fixture
@@ -259,7 +262,6 @@ def test_run_gold_bacen_integrity(
     """Valida criação de fato_macro e presença de JURO_REAL_EXPOST sem chaves órfãs."""
     builder.run_dims(mock_params)
 
-    # Cria dados simulados na Prata Prata BACEN
     df_bacen_silver = pd.DataFrame(
         [
             {"data": "2023-01-31", "sgs_codigo": 432, "valor": 13.75},
@@ -277,12 +279,10 @@ def test_run_gold_bacen_integrity(
     assert "sk_indicador" in df_fato.columns
     assert "valor" in df_fato.columns
 
-    # Valida integridade referencial com dim_indicador
     df_ind = persistence.load("gold", "dim_indicador", modo=mock_params.modo)
     valid_sk_ind = set(df_ind["sk_indicador"])
     assert set(df_fato["sk_indicador"]).issubset(valid_sk_ind)
 
-    # Verifica se JURO_REAL_EXPOST (sk_indicador=8) foi calculado
     juro_real_rows = df_fato[df_fato["sk_indicador"] == 8]
     assert not juro_real_rows.empty
     expected_fisher = (1 + 0.1375) / (1 + 0.0577) - 1.0
@@ -295,7 +295,6 @@ def test_run_gold_b3_integrity_and_flag_update(
     """Valida criação de fato_cotacoes, indicadores derivados de mercado e atualização de tem_b3."""
     builder.run_dims(mock_params)
 
-    # Dados simulados B3 na Prata
     dates = pd.date_range("2023-01-01", periods=60, freq="B")
     data_b3 = []
     for dt in dates:
@@ -323,7 +322,6 @@ def test_run_gold_b3_integrity_and_flag_update(
     assert "sma_50" in df_fato.columns
     assert "volume_fin_aprox" in df_fato.columns
 
-    # Valida atualização da flag tem_b3 em dim_empresa
     df_empresa = persistence.load("gold", "dim_empresa", modo=mock_params.modo)
     wege_flag = df_empresa[df_empresa["ticker"] == "WEGE3"].iloc[0]["tem_b3"]
     jbss_flag = df_empresa[df_empresa["ticker"] == "JBSS3"].iloc[0]["tem_b3"]
@@ -339,7 +337,6 @@ def test_run_gold_cvm_financial_vs_industrial_rules(
 
     df_cvm_silver = pd.DataFrame(
         [
-            # WEGE3 (CD_CVM 5410, industrial)
             {
                 "cd_cvm": 5410,
                 "dt_fim_exerc": "2023-12-31",
@@ -356,7 +353,6 @@ def test_run_gold_cvm_financial_vs_industrial_rules(
                 "EMPR_FIN_LP": 100.0,
                 "PATRIMONIO_LIQUIDO": 800.0,
             },
-            # ITUB4 (CD_CVM 19348, financeira)
             {
                 "cd_cvm": 19348,
                 "dt_fim_exerc": "2023-12-31",
@@ -375,7 +371,6 @@ def test_run_gold_cvm_financial_vs_industrial_rules(
     df_ind = persistence.load("gold", "dim_indicador", modo=mock_params.modo)
     ind_map = dict(zip(df_ind["codigo"], df_ind["sk_indicador"]))
 
-    # ITUB4 não deve ter Margem EBIT, Liquidez Corrente, Dívida Bruta nem Dívida Líquida
     itub_sk = 19348
     itub_fatos = df_fato[df_fato["sk_empresa"] == itub_sk]
     itub_ind_sks = set(itub_fatos["sk_indicador"])
@@ -385,13 +380,11 @@ def test_run_gold_cvm_financial_vs_industrial_rules(
     assert ind_map["DIVIDA_BRUTA"] not in itub_ind_sks
     assert ind_map["DIVIDA_LIQUIDA"] not in itub_ind_sks
 
-    # ITUB4 deve ter Lucro Líquido, PL, ROE e Receita Intermediação
     assert ind_map["LUCRO_LIQUIDO"] in itub_ind_sks
     assert ind_map["PATRIMONIO_LIQUIDO"] in itub_ind_sks
     assert ind_map["ROE"] in itub_ind_sks
     assert ind_map["RECEITA_INTERMEDIACAO"] in itub_ind_sks
 
-    # WEGE3 deve possuir Margem EBIT e Liquidez Corrente
     wege_sk = 5410
     wege_fatos = df_fato[df_fato["sk_empresa"] == wege_sk]
     wege_ind_sks = set(wege_fatos["sk_indicador"])
@@ -417,3 +410,103 @@ def test_run_gold_idempotency(
     df_run2 = persistence.load("gold", "fato_macro", modo=mock_params.modo)
 
     assert len(df_run1) == len(df_run2)
+
+
+# ------------------------------------------------------------------------------
+# Testes da Persistência da Ouro (STORY-022)
+# ------------------------------------------------------------------------------
+
+
+def test_save_gold_creates_manifest(
+    persistence: Persistence, mock_params: PipelineParams
+) -> None:
+    """Valida se save('gold', ...) cria/atualiza _manifest.json corretamente."""
+    df_mock = pd.DataFrame([{"sk_tempo": 20230101, "sk_indicador": 1, "valor": 13.75}])
+    res = persistence.save("gold", "fato_macro", df_mock, modo=mock_params.modo)
+
+    assert res["rows"] == 1
+
+    manifest_path = paths.SANDBOX_DIR / "gold" / "_manifest.json"
+    assert manifest_path.exists()
+
+    with open(manifest_path, "r", encoding="utf-8") as f:
+        manifest_data = json.load(f)
+
+    assert "fato_macro" in manifest_data
+    assert manifest_data["fato_macro"]["linhas"] == 1
+    assert "run_id" in manifest_data["fato_macro"]
+    assert "atualizado_em" in manifest_data["fato_macro"]
+
+
+def test_load_gold_with_filters_pushdown(
+    persistence: Persistence, mock_params: PipelineParams
+) -> None:
+    """Valida filtragem pushdown no Parquet com dicionário e lista de tuplas."""
+    df_mock = pd.DataFrame(
+        [
+            {"sk_tempo": 20230101, "sk_empresa": 5410, "close": 38.5},
+            {"sk_tempo": 20230102, "sk_empresa": 5410, "close": 39.0},
+            {"sk_tempo": 20230101, "sk_empresa": 19348, "close": 25.0},
+        ]
+    )
+    persistence.save("gold", "fato_cotacoes", df_mock, modo=mock_params.modo)
+
+    # Filtro via Dicionário
+    df_filtered_dict = persistence.load(
+        "gold", "fato_cotacoes", filters={"sk_empresa": 5410}, modo=mock_params.modo
+    )
+    assert len(df_filtered_dict) == 2
+    assert set(df_filtered_dict["sk_empresa"]) == {5410}
+
+    # Filtro via Lista de Tuplas com operador >=
+    df_filtered_tuples = persistence.load(
+        "gold",
+        "fato_cotacoes",
+        filters=[("sk_tempo", ">=", 20230102)],
+        modo=mock_params.modo,
+    )
+    assert len(df_filtered_tuples) == 1
+    assert df_filtered_tuples.iloc[0]["sk_tempo"] == 20230102
+
+
+def test_load_gold_fallback_when_neon_unavailable(
+    persistence: Persistence, mock_params: PipelineParams
+) -> None:
+    """Valida se load em modo produção recorre ao Parquet se Neon estiver indisponível."""
+    df_mock = pd.DataFrame([{"sk_tempo": 20230101, "sk_indicador": 1, "valor": 10.0}])
+    persistence.save("gold", "fato_macro", df_mock, modo="producao")
+
+    with patch("src.utils.db.is_available", return_value=False):
+        df_loaded = persistence.load("gold", "fato_macro", modo="producao")
+        assert not df_loaded.empty
+        assert df_loaded.attrs.get("fonte") == "parquet"
+
+
+def test_invalid_column_name_raises_error(persistence: Persistence) -> None:
+    """Garante que tentativa de injeção de SQL via nomes de colunas resulta em ValueError."""
+    with pytest.raises(ValueError, match="Nome de coluna inválido"):
+        persistence.load("gold", "dim_empresa", columns=["ticker; DROP TABLE dim_empresa;--"])
+
+    with pytest.raises(ValueError, match="Filtro com nome de coluna inválido"):
+        persistence.load("gold", "dim_empresa", filters={"ticker; DELETE FROM dim_empresa;--": "WEGE3"})
+
+
+def test_health_report_structure_and_divergence(
+    persistence: Persistence, mock_params: PipelineParams
+) -> None:
+    """Valida estrutura do health_report() e identificação de divergências."""
+    df_mock = pd.DataFrame([{"sk_tempo": 20230101, "sk_indicador": 1, "valor": 13.75}])
+    persistence.save("gold", "fato_macro", df_mock, modo=mock_params.modo)
+
+    report = persistence.health_report(modo=mock_params.modo)
+
+    assert isinstance(report, dict)
+    assert "fato_macro" in report
+    assert "dim_empresa" in report
+
+    macro_rep = report["fato_macro"]
+    assert "linhas_parquet" in macro_rep
+    assert "linhas_neon" in macro_rep
+    assert "linhas_manifest" in macro_rep
+    assert "fonte_ativa" in macro_rep
+    assert macro_rep["linhas_manifest"] == 1
