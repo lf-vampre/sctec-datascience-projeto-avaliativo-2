@@ -5,7 +5,8 @@ import time
 from abc import ABC, abstractmethod
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+import json
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from src.config import settings
 from src.models.contracts import PipelineParams, StepResult
@@ -26,6 +27,7 @@ class PipelineLogger:
     """Gerenciador de logs do pipeline com histórico em memória e notificações para UI."""
 
     def __init__(self) -> None:
+        self.camada: Optional[str] = None
         self.logs: List[Dict[str, Any]] = []
         self._handlers: List[Callable[[Dict[str, Any]], None]] = []
 
@@ -34,12 +36,21 @@ class PipelineLogger:
         if fn not in self._handlers:
             self._handlers.append(fn)
 
+    def clear_handlers(self) -> None:
+        """Remove todos os handlers registrados."""
+        self._handlers.clear()
+
+    def clear_logs(self) -> None:
+        """Descarta o histórico interno de eventos."""
+        self.logs.clear()        
+
     def emit(self, level: str, fonte: str, etapa: str, msg: str, **meta: Any) -> None:
         """Emite um log estruturado, armazena no histórico, aciona handlers e envia ao logging padrão."""
         event = {
             "timestamp": datetime.now().isoformat(),
             "level": level.upper(),
             "fonte": fonte,
+            "camada": self.camada,
             "etapa": etapa,
             "message": msg,
             "metadata": meta,
@@ -69,6 +80,49 @@ def bronze_is_fresh(file_path: Path, ttl_days: int = settings.BRONZE_TTL_DAYS) -
     ttl_seconds = ttl_days * 86400
     return file_age_seconds < ttl_seconds
 
+def _meta_path(file_path: Path) -> Path:
+    """Caminho do sidecar com a assinatura de parâmetros do Bronze."""
+    return file_path.with_suffix(".meta.json")
+
+def _normalize_signature(signature: Dict[str, Any]) -> Dict[str, Any]:
+    """Normaliza via JSON (tuplas viram listas) para comparação estável."""
+    return json.loads(json.dumps(signature, sort_keys=True, default=str))
+
+
+def write_bronze_signature(file_path: Path, signature: Dict[str, Any]) -> None:
+    """Grava ao lado do Bronze a assinatura dos parâmetros que o geraram."""
+    meta = {
+        "signature": _normalize_signature(signature),
+        "gravado_em": datetime.now().isoformat(),
+    }
+    meta_path = _meta_path(file_path)
+    tmp_path = meta_path.with_suffix(".json.tmp")
+    tmp_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp_path.replace(meta_path)
+
+
+def bronze_cache_status(
+    file_path: Path,
+    signature: Dict[str, Any],
+    ttl_days: int = settings.BRONZE_TTL_DAYS,
+) -> Tuple[bool, str]:
+    """Decide o reuso do Bronze: TTL válido e parâmetros idênticos. Retorna (reutilizar, motivo)."""
+    if not bronze_is_fresh(file_path, ttl_days):
+        return False, "arquivo ausente ou TTL expirado"
+
+    meta_path = _meta_path(file_path)
+    if not meta_path.exists():
+        return False, "sem assinatura de parâmetros"
+
+    try:
+        saved = json.loads(meta_path.read_text(encoding="utf-8")).get("signature")
+    except (OSError, ValueError):
+        return False, "assinatura ilegível"
+
+    if saved != _normalize_signature(signature):
+        return False, "parâmetros diferentes do Bronze existente"
+
+    return True, "TTL válido e parâmetros idênticos"
 
 def get_layer_path(params: PipelineParams, layer: str) -> Path:
     """Roteia o caminho da camada de dados respeitando o modo (sandbox vs producao)."""

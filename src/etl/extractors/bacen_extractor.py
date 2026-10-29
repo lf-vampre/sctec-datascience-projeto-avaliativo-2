@@ -8,7 +8,7 @@ import pandas as pd
 import requests
 
 from src.config import settings
-from src.etl.base import BaseExtractor, PipelineLogger, bronze_is_fresh, get_layer_path
+from src.etl.base import BaseExtractor, PipelineLogger, bronze_cache_status, write_bronze_signature, get_layer_path
 from src.etl.warehouse.persistence import Persistence
 from src.models.contracts import PipelineParams, StepResult
 from src.utils.memory import release
@@ -36,25 +36,6 @@ class BacenExtractor(BaseExtractor):
         bronze_dir = get_layer_path(params, "bronze")
         target_file = bronze_dir / "bacen_sgs.parquet"
 
-        if bronze_is_fresh(target_file, settings.BRONZE_TTL_DAYS):
-            self.logger.emit(
-                "INFO",
-                "BacenExtractor",
-                "CACHE",
-                f"Arquivo Bronze recente encontrado em {target_file}. Reutilizando dados.",
-            )
-            cached_df = self.persistence.load("bronze", "bacen_sgs", modo=params.modo)
-            return StepResult(
-                step_id=step_id,
-                ok=True,
-                rows=len(cached_df),
-                paths=[str(target_file)],
-                warnings=["Reutilizado do cache Bronze (TTL)"],
-            )
-
-        data_ini_fmt = _format_date_bacen(params.bacen_periodo[0])
-        data_fim_fmt = _format_date_bacen(params.bacen_periodo[1])
-
         series_map: Dict[int, str] = getattr(
             settings,
             "BACEN_SERIES",
@@ -68,6 +49,32 @@ class BacenExtractor(BaseExtractor):
                 196: "Poupança",
             },
         )
+
+        signature = {
+            "periodo": list(params.bacen_periodo),
+            "series": sorted(str(k) for k in series_map.keys()),
+        }
+        reutilizar, motivo = bronze_cache_status(target_file, signature)
+
+        if reutilizar:
+            self.logger.emit(
+                "INFO", "BacenExtractor", "CACHE",
+                f"Bronze reutilizado ({motivo}): {target_file}",
+            )
+            cached_df = self.persistence.load("bronze", "bacen_sgs", modo=params.modo)
+            return StepResult(
+                step_id=step_id,
+                ok=True,
+                rows=len(cached_df),
+                paths=[str(target_file)],
+                warnings=["Reutilizado do cache Bronze (TTL)"],
+            )
+
+        self.logger.emit("INFO", "BacenExtractor", "CACHE", f"Bronze não reutilizado: {motivo}.")
+
+        data_ini_fmt = _format_date_bacen(params.bacen_periodo[0])
+        data_fim_fmt = _format_date_bacen(params.bacen_periodo[1])
+
 
         all_series_dfs: List[pd.DataFrame] = []
         headers = {"User-Agent": "Mozilla/5.0 (DataOps-Pipeline)"}
@@ -141,12 +148,14 @@ class BacenExtractor(BaseExtractor):
             layer="bronze",
             name="bacen_sgs",
             df=final_df,
-            partition_cols=["serie_codigo"],
+            partition_cols=None,
             modo=params.modo,
         )
 
         if save_res.get("warning"):
             warnings.append(save_res["warning"])
+
+        write_bronze_signature(target_file, signature)
 
         return StepResult(
             step_id=step_id,

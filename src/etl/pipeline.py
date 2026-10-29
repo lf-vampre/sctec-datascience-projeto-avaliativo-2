@@ -203,6 +203,10 @@ class PipelineOrchestrator:
             self._resultados[step_id] = res
             return res
 
+        self.logger.camada = next(
+            (s.camada for s in self.steps() if s.step_id == step_id), None
+        )
+
         try:
             resultado = self._executar_passo_interno(step_id)
             self._resultados[step_id] = resultado

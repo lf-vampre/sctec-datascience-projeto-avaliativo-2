@@ -55,6 +55,12 @@ def init_state() -> None:
     if "dataops_logs" not in st.session_state:
         st.session_state["dataops_logs"] = []
 
+    if "dataops_resultados" not in st.session_state:
+        st.session_state["dataops_resultados"] = {}
+
+    if "dataops_finalizado" not in st.session_state:
+        st.session_state["dataops_finalizado"] = False    
+
 
 def ir_para(modo: str, aba: str = "d1_macro") -> None:
     """Altera o modo de navegação ativo ("dataops" ou "bi") e a aba inicial."""
@@ -83,6 +89,8 @@ def set_dataops_pipeline(params: PipelineParams, orchestrator: PipelineOrchestra
     st.session_state["dataops_modo"] = params.modo
     st.session_state["dataops_orchestrator"] = orchestrator
     st.session_state["dataops_logs"] = []
+    st.session_state["dataops_resultados"] = {}
+    st.session_state["dataops_finalizado"] = False
 
 
 def reset_dataops_pipeline() -> None:
@@ -90,6 +98,8 @@ def reset_dataops_pipeline() -> None:
     st.session_state["dataops_params"] = None
     st.session_state["dataops_orchestrator"] = None
     st.session_state["dataops_logs"] = []
+    st.session_state["dataops_resultados"] = {}
+    st.session_state["dataops_finalizado"] = False
 
 
 def add_dataops_log(log_event: Dict[str, Any], limit: int = 500) -> None:
@@ -103,7 +113,14 @@ def add_dataops_log(log_event: Dict[str, Any], limit: int = 500) -> None:
 
 
 def limpar_memoria_dataops() -> None:
-    """Força coleta de lixo, limpa cache de dados e reseta estado do orquestrador."""
-    reset_dataops_pipeline()
+    """Libera memória do pipeline mantendo resumo dos passos e logs para consulta."""
+    orchestrator = st.session_state.get("dataops_orchestrator")
+    if orchestrator is not None:
+        st.session_state["dataops_resultados"] = orchestrator.estado()
+        orchestrator.logger.clear_handlers()
+        orchestrator.logger.clear_logs()
+
+    st.session_state["dataops_orchestrator"] = None
+    st.session_state["dataops_finalizado"] = True
     st.cache_data.clear()
     gc.collect()

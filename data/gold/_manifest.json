@@ -1,38 +1,38 @@
 {
   "dim_tempo": {
     "linhas": 1827,
-    "run_id": "e294a977-e8b1-4f9d-807b-0032e8736925",
-    "atualizado_em": "2026-10-29T17:05:01.767335",
+    "run_id": "fe393cdd-2c98-49e9-a870-46fc7cac6684",
+    "atualizado_em": "2026-10-29T19:15:32.411414",
     "neon_ok": true
   },
   "dim_empresa": {
     "linhas": 19,
-    "run_id": "3677c9ae-8dee-4e0e-995f-336a9a0d3247",
-    "atualizado_em": "2026-10-29T17:05:46.292954",
+    "run_id": "ae96772c-ac62-4ce1-b2f3-2a3339e105a6",
+    "atualizado_em": "2026-10-29T19:16:03.976670",
     "neon_ok": true
   },
   "dim_indicador": {
     "linhas": 32,
-    "run_id": "b3394274-44c0-4989-9787-26ee25979196",
-    "atualizado_em": "2026-10-29T17:05:05.009604",
+    "run_id": "528bace2-c737-4d3a-9394-89402d400bd6",
+    "atualizado_em": "2026-10-29T19:15:34.427172",
     "neon_ok": true
   },
   "fato_macro": {
     "linhas": 4636,
-    "run_id": "0b6b7897-155a-4e84-9e9a-f209030eac2a",
-    "atualizado_em": "2026-10-29T17:05:18.351280",
+    "run_id": "bb036f6c-035e-4b2b-aa54-8dc02f7cdfd3",
+    "atualizado_em": "2026-10-29T19:15:40.856348",
     "neon_ok": true
   },
   "fato_cotacoes": {
     "linhas": 21097,
-    "run_id": "a3e2ccd0-b442-4e84-aab6-248b7d22937a",
-    "atualizado_em": "2026-10-29T17:05:32.997917",
+    "run_id": "7ec97264-3fc1-49a8-b242-254b3de2f705",
+    "atualizado_em": "2026-10-29T19:15:50.466975",
     "neon_ok": true
   },
   "fato_demonstrativos": {
     "linhas": 1033,
-    "run_id": "9c8ea3e3-2481-444e-b3b0-76b269d3b207",
-    "atualizado_em": "2026-10-29T17:05:43.320647",
+    "run_id": "d91b83ad-95f0-4a2c-9955-e9deee731a22",
+    "atualizado_em": "2026-10-29T19:16:01.034417",
     "neon_ok": true
   }
 }

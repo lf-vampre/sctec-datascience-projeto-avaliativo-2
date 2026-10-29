@@ -28,37 +28,35 @@ def _format_ticker_option(ticker: str) -> str:
     info = COMPANIES[ticker]
     return f"{ticker} — {info.denom_cia} / {info.setor_analitico}"
 
-
 def _obter_senha_esperada() -> Optional[str]:
     """Obtém a senha configurada via variáveis de ambiente, secrets do Streamlit ou settings."""
     env_pass = os.getenv("DATAOPS_PASSWORD") or os.getenv("dataops_password")
     if env_pass:
         return str(env_pass).strip()
 
-        try:
-            if hasattr(st, "secrets"):
-                if "dataops_password" in st.secrets:
-                    return str(st.secrets["dataops_password"]).strip()
-                if "DATAOPS_PASSWORD" in st.secrets:
-                    return str(st.secrets["DATAOPS_PASSWORD"]).strip()
-                if "dataops" in st.secrets:
-                    sec_dataops = st.secrets["dataops"]
-                    if isinstance(sec_dataops, dict) and "password" in sec_dataops:
-                        return str(sec_dataops["password"]).strip()
-                    elif isinstance(sec_dataops, str):
-                        return str(sec_dataops).strip()
-        except FileNotFoundError:
-            # Sem secrets.toml: esperado em ambiente sem configuração
-            pass
-        except Exception as exc:
-            logger.warning("Falha ao ler secrets do DataOps: %s", type(exc).__name__)
+    try:
+        if hasattr(st, "secrets"):
+            if "dataops_password" in st.secrets:
+                return str(st.secrets["dataops_password"]).strip()
+            if "DATAOPS_PASSWORD" in st.secrets:
+                return str(st.secrets["DATAOPS_PASSWORD"]).strip()
+            if "dataops" in st.secrets:
+                sec_dataops = st.secrets["dataops"]
+                if isinstance(sec_dataops, dict) and "password" in sec_dataops:
+                    return str(sec_dataops["password"]).strip()
+                elif isinstance(sec_dataops, str):
+                    return str(sec_dataops).strip()
+    except FileNotFoundError:
+        # Sem secrets.toml: esperado em ambiente sem configuração
+        pass
+    except Exception as exc:
+        logger.warning("Falha ao ler secrets do DataOps: %s", type(exc).__name__)
 
     setting_pass = getattr(settings, "DATAOPS_PASSWORD", None)
     if setting_pass:
         return str(setting_pass).strip()
 
     return None
-
 
 def _render_autenticacao() -> None:
     """Renderiza a autenticação e indicação do modo no topo da página."""
@@ -106,7 +104,7 @@ def _render_autenticacao() -> None:
         #
 
     if modo_atual == "producao":
-        aviso("info", "🟢 Modo Produção Ativo — Execuções serão persistidas na área oficial do Data Lake.")
+        aviso("info", "🟢 Modo Produção Ativo — Execuções serão persistidas na área oficial do Data warehouse.")
     else:
         aviso("warning", "🟡 Modo Sandbox Ativo — Execuções limitadas ao ambiente temporário isolado.")
 
@@ -229,20 +227,21 @@ def _render_formulario() -> None:
         set_dataops_pipeline(params, orchestrator)
         st.rerun()
 
-def _render_painel_execucao(orchestrator: PipelineOrchestrator) -> None:
+def _render_painel_execucao(orchestrator: Optional[PipelineOrchestrator]) -> None:
     """Renderiza a interface de execução sequencial e relatórios."""
-    col_act1, col_act2 = st.columns([1, 1])
-    with col_act1:
-        if st.button("🔄 Voltar aos Parâmetros"):
-            reset_dataops_pipeline()
-            st.rerun()
-    with col_act2:
-        if st.button("🧹 Limpar Memória", type="secondary"):
-            limpar_memoria_dataops()
-            st.success("Memória e cache limpos com sucesso!")
+    finalizado = st.session_state.get("dataops_finalizado", False)
+
+    if st.button("🔄 Voltar aos Parâmetros"):
+        reset_dataops_pipeline()
+        st.rerun()
 
     st.markdown("### 🚀 Execução do Pipeline")
-    aviso("info", "Executando carga completa (Bronze ➔ Prata ➔ Ouro)...")
+    banner = st.empty()
+    with banner.container():
+        if finalizado:
+            aviso("info", "✅ Pipeline finalizado. Memória e cache liberados; logs mantidos para consulta.")
+        else:
+            aviso("info", "Executando carga completa (Bronze ➔ Prata ➔ Ouro)...")
 
     from src.etl.warehouse.persistence import Persistence
 
@@ -250,7 +249,7 @@ def _render_painel_execucao(orchestrator: PipelineOrchestrator) -> None:
 
     logs = st.session_state.get("dataops_logs", [])
     with st.expander(
-        f"📜 Histórico de Logs:)", expanded=True
+        "📜 Histórico de Logs", expanded=True
     ):
         fontes_disponiveis = ["TODAS"] + sorted(
             list({l["fonte"] for l in logs if "fonte" in l})
@@ -285,8 +284,12 @@ def _render_painel_execucao(orchestrator: PipelineOrchestrator) -> None:
                     l for l in logs_filtrados if l.get("level") == filtro_nivel
                 ]
 
+            def _tag(l: Dict[str, Any]) -> str:
+                camada = (l.get("camada") or "").capitalize()
+                return f"{camada} - {l['fonte']}" if camada else l["fonte"]
+
             log_str = "\n".join(
-                f"[{l['timestamp']}] [{l['level']}] [{l['fonte']}] [{l['etapa']}] {l['message']}"
+                f"[{l['timestamp']}] [{l['level']}] [{_tag(l)}] [{l['etapa']}] {l['message']}"
                 for l in logs_filtrados
             )
             log_placeholder.code(
@@ -297,21 +300,26 @@ def _render_painel_execucao(orchestrator: PipelineOrchestrator) -> None:
             add_dataops_log(event)
             _render_logs_em_tempo_real()
 
-        orchestrator.logger.add_handler(log_callback)
-
-        resultados = orchestrator.resultados
-        if not resultados:
-            steps = orchestrator.steps()
+        if orchestrator is not None and not orchestrator.resultados:
+            orchestrator.logger.add_handler(log_callback)
             try:
-                for step in steps:
+                for step in orchestrator.steps():
                     res = orchestrator.run_step(step.step_id)
                     if not res.ok:
-                        st.error(f"❌ Falha em {step.rotulo}: {res.error}")
                         break
             except Exception as e:
                 st.error(f"❌ Erro fatal na execução do pipeline: {e}")
+            finally:
+                limpar_memoria_dataops()
+                with banner.container():
+                    aviso("info", "✅ Pipeline finalizado. Memória e cache liberados; logs mantidos para consulta.")
 
         _render_logs_em_tempo_real()
+
+    resultados = st.session_state.get("dataops_resultados", {})
+    for step_id, res in resultados.items():
+        if not res.get("ok"):
+            st.error(f"❌ Falha em {step_id}: {res.get('error')}")
 
     st.markdown("### 🏥 Relatório de Saúde (Health Report)")
     modo_atual = st.session_state.get("dataops_modo", "sandbox")
@@ -340,7 +348,7 @@ def render() -> None:
     params = get_dataops_params()
     orchestrator: Optional[PipelineOrchestrator] = st.session_state.get("dataops_orchestrator")
 
-    if params is None or orchestrator is None:
+    if params is None:
         _render_formulario()
     else:
         _render_painel_execucao(orchestrator)
