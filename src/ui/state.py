@@ -1,10 +1,10 @@
-"""
-Gestão centralizada do estado de sessão (st.session_state).
-Define a estrutura de navegação e os filtros globais da aplicação.
+"""Gestão centralizada do estado de sessão (st.session_state).
+
+Define a estrutura de navegação, os filtros globais e o estado do pipeline DataOps.
 Sem leitura de dados ou I/O neste módulo.
 """
 
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 import streamlit as st
 
 from src.config.settings import (
@@ -13,6 +13,8 @@ from src.config.settings import (
     DEFAULT_CVM_START_YEAR,
 )
 from src.config.universe import COMPANIES
+from src.etl.pipeline import PipelineOrchestrator
+from src.models.contracts import PipelineParams
 
 
 def get_default_filtros() -> Dict[str, Any]:
@@ -40,6 +42,15 @@ def init_state() -> None:
     if "filtros" not in st.session_state:
         st.session_state["filtros"] = get_default_filtros()
 
+    if "dataops_params" not in st.session_state:
+        st.session_state["dataops_params"] = None
+
+    if "dataops_modo" not in st.session_state:
+        st.session_state["dataops_modo"] = "sandbox"
+
+    if "dataops_orchestrator" not in st.session_state:
+        st.session_state["dataops_orchestrator"] = None
+
 
 def ir_para(modo: str, aba: str = "d1_macro") -> None:
     """Altera o modo de navegação ativo ("dataops" ou "bi") e a aba inicial."""
@@ -55,3 +66,21 @@ def voltar_landing() -> None:
 def reset_filtros() -> None:
     """Restaura os filtros globais para os valores padrão das configurações."""
     st.session_state["filtros"] = get_default_filtros()
+
+
+def get_dataops_params() -> Optional[PipelineParams]:
+    """Retorna os parâmetros atuais do DataOps."""
+    return st.session_state.get("dataops_params")
+
+
+def set_dataops_pipeline(params: PipelineParams, orchestrator: PipelineOrchestrator) -> None:
+    """Define os parâmetros, modo e orquestrador do DataOps no estado."""
+    st.session_state["dataops_params"] = params
+    st.session_state["dataops_modo"] = params.modo
+    st.session_state["dataops_orchestrator"] = orchestrator
+
+
+def reset_dataops_pipeline() -> None:
+    """Limpa o orquestrador e parâmetros do DataOps ao alterar configurações."""
+    st.session_state["dataops_params"] = None
+    st.session_state["dataops_orchestrator"] = None
