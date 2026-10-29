@@ -5,7 +5,6 @@ import time
 from abc import ABC, abstractmethod
 from datetime import datetime
 from pathlib import Path
-from threading import Lock
 from typing import Any, Callable, Dict, List, Optional
 
 from src.config import settings
@@ -166,37 +165,18 @@ class BaseCleaner(ABC):
 
 
 # ------------------------------------------------------------------------------
-# Controle de Execução Global 
+# Controle de Execução Global (Desativado / Simples)
 # ------------------------------------------------------------------------------
-_execution_lock = Lock()
-_last_sandbox_execution: float = 0.0
-
-
 def seconds_until_allowed(modo: str) -> float:
-    """Calcula quantos segundos faltam para permitir nova execução no modo sandbox."""
-    if modo != "sandbox":
-        return 0.0
-    elapsed = time.time() - _last_sandbox_execution
-    remaining = settings.SANDBOX_MIN_INTERVAL_SECONDS - elapsed
-    return max(0.0, remaining)
+    """Retorna sempre 0 para desativar a trava temporal."""
+    return 0.0
 
 
 def try_acquire(modo: str) -> bool:
-    """Tenta adquirir a trava global do pipeline e valida o intervalo mínimo para sandbox."""
-    global _last_sandbox_execution
-
-    if seconds_until_allowed(modo) > 0.0:
-        return False
-
-    acquired = _execution_lock.acquire(blocking=False)
-    if acquired:
-        if modo == "sandbox":
-            _last_sandbox_execution = time.time()
-        return True
-    return False
+    """Retorna sempre True para desativar o bloqueio de concorrência global."""
+    return True
 
 
 def release_lock() -> None:
-    """Libera a trava global do pipeline."""
-    if _execution_lock.locked():
-        _execution_lock.release()
+    """Sem efeito por causa da remoção do lock global."""
+    pass

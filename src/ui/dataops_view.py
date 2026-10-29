@@ -1,8 +1,12 @@
-"""Visão do DataOps Control Tower para configuração de parâmetros e modo de execução."""
+"""Visão do DataOps Control Tower para parametrização e execução do pipeline."""
 
+import os
 from datetime import datetime
-from typing import List, Tuple
+from typing import Any, Dict, List, Optional
 import streamlit as st
+import logging
+
+logger = logging.getLogger(__name__)
 
 from src.config import settings
 from src.config.universe import COMPANIES
@@ -11,7 +15,9 @@ from src.models.contracts import PipelineParams
 from src.ui.components.alerts import aviso
 from src.ui.components.header import header
 from src.ui.state import (
+    add_dataops_log,
     get_dataops_params,
+    limpar_memoria_dataops,
     reset_dataops_pipeline,
     set_dataops_pipeline,
 )
@@ -23,42 +29,100 @@ def _format_ticker_option(ticker: str) -> str:
     return f"{ticker} — {info.denom_cia} / {info.setor_analitico}"
 
 
-def render() -> None:
-    """Renderiza o formulário de parâmetros e modo de execução do DataOps."""
-    header(
-        titulo="⚙️ DataOps Control Tower",
-        subtitulo="Orquestração e monitoramento do pipeline de dados.",
-        mostrar_botao_voltar=True,
-    )
+def _obter_senha_esperada() -> Optional[str]:
+    """Obtém a senha configurada via variáveis de ambiente, secrets do Streamlit ou settings."""
+    env_pass = os.getenv("DATAOPS_PASSWORD") or os.getenv("dataops_password")
+    if env_pass:
+        return str(env_pass).strip()
 
-    params_existentes = get_dataops_params()
+        try:
+            if hasattr(st, "secrets"):
+                if "dataops_password" in st.secrets:
+                    return str(st.secrets["dataops_password"]).strip()
+                if "DATAOPS_PASSWORD" in st.secrets:
+                    return str(st.secrets["DATAOPS_PASSWORD"]).strip()
+                if "dataops" in st.secrets:
+                    sec_dataops = st.secrets["dataops"]
+                    if isinstance(sec_dataops, dict) and "password" in sec_dataops:
+                        return str(sec_dataops["password"]).strip()
+                    elif isinstance(sec_dataops, str):
+                        return str(sec_dataops).strip()
+        except FileNotFoundError:
+            # Sem secrets.toml: esperado em ambiente sem configuração
+            pass
+        except Exception as exc:
+            logger.warning("Falha ao ler secrets do DataOps: %s", type(exc).__name__)
+
+    setting_pass = getattr(settings, "DATAOPS_PASSWORD", None)
+    if setting_pass:
+        return str(setting_pass).strip()
+
+    return None
+
+
+def _render_autenticacao() -> None:
+    """Renderiza a autenticação e indicação do modo no topo da página."""
+    col_auth, col_status = st.columns([1, 2])
+
+    with col_auth:
+        st.write("**🔐 Autenticação**")
+        col_inp, col_btn = st.columns([2, 1])
+        with col_inp:
+            senha_digitada = st.text_input(
+                "Senha DataOps",
+                type="password",
+                key="input_dataops_password",
+                label_visibility="collapsed",
+                placeholder="Senha de Produção",
+            )
+        with col_btn:
+            btn_validar = st.button("Validar", key="btn_validar_senha")
+
+        if btn_validar:
+            senha_esperada = _obter_senha_esperada()
+            modo_resultado = autorizar(senha_digitada, senha_esperada)
+            st.session_state["dataops_modo"] = modo_resultado
+
+            orchestrator: Optional[PipelineOrchestrator] = st.session_state.get("dataops_orchestrator")
+            if orchestrator and orchestrator.params:
+                orchestrator.params.is_sandbox = (modo_resultado == "sandbox")
+
+            if modo_resultado == "producao":
+                st.session_state["auth_feedback"] = ("success", "Autenticado - modo produção")
+            elif not senha_esperada:
+                st.session_state["auth_feedback"] = ("error", "Senha de produção não configurada")
+            else:
+                st.session_state["auth_feedback"] = ("error", "Senha inválida")
+
+        if "auth_feedback" in st.session_state:
+            tipo, msg = st.session_state["auth_feedback"]
+            if tipo == "success":
+                st.success(msg)
+            else:
+                st.error(msg)
+
     modo_atual = st.session_state.get("dataops_modo", "sandbox")
+    #with col_status:
+        #
 
-    # Faixa de modo sempre visível
     if modo_atual == "producao":
         aviso("info", "🟢 Modo Produção Ativo — Execuções serão persistidas na área oficial do Data Lake.")
     else:
-        aviso(
-            "warning",
-            "🟡 Modo Sandbox Ativo — Execuções limitadas ao ambiente temporário isolado.",
-        )
+        aviso("warning", "🟡 Modo Sandbox Ativo — Execuções limitadas ao ambiente temporário isolado.")
 
-    st.caption(
-        "💡 **Ajuda sobre os dados:** O período do BACEN e B3 utilizam datas no formato AAAA-MM-DD. "
-        "A API do yfinance exige `end` exclusivo (ex: até 2024-01-01 para incluir todo o ano de 2023). "
-        "A CVM opera com dados anuais do DFP."
-    )
 
-    if params_existentes:
-        st.warning("⚠️ O pipeline já foi configurado. Alterar parâmetros irá reiniciar a sessão do orquestrador.")
-        if st.button("🔄 Redefinir Parâmetros"):
-            reset_dataops_pipeline()
-            st.rerun()
+def _render_formulario() -> None:
+    """Renderiza a seção de formulário e configuração do pipeline."""
+    if st.session_state.pop("reset_dates_flag", False):
+        st.session_state["bacen_inicio"] = datetime.strptime(settings.DEFAULT_BACEN_START_DATE, "%Y-%m-%d").date()
+        st.session_state["bacen_fim"] = datetime.strptime(settings.DEFAULT_BACEN_END_DATE, "%Y-%m-%d").date()
+        st.session_state["b3_inicio"] = datetime.strptime(settings.DEFAULT_B3_START_DATE, "%Y-%m-%d").date()
+        st.session_state["b3_fim"] = datetime.strptime(settings.DEFAULT_B3_END_DATE, "%Y-%m-%d").date()
+        st.session_state["cvm_anos"] = list(range(settings.DEFAULT_CVM_START_YEAR, settings.DEFAULT_CVM_END_YEAR + 1))
 
     with st.container(border=True):
         st.subheader("📋 Parâmetros da Carga")
 
-        # Seleção de Empresas/Tickers
         todos_tickers = list(COMPANIES.keys())
         tickers_selecionados = st.multiselect(
             "Empresas e Tickers",
@@ -70,77 +134,62 @@ def render() -> None:
 
         st.markdown("---")
         st.write("**Períodos por Fonte de Dados**")
+        st.caption(
+                "💡 **Ajuda sobre os dados:** O período do BACEN e B3 utilizam datas no formato AAAA-MM-DD. "
+                "A API do yfinance exige `end` exclusivo. A CVM opera com dados anuais do DFP."
+            )
+        st.markdown("---")
 
-        col1, col2 = st.columns(2)
+        col1_bacen, col2_bacen = st.columns(2)
 
-        with col1:
+        with col1_bacen:
             st.markdown("##### 🏛️ BACEN (SGS)")
-            bacen_inicio = st.date_input(
-                "Início BACEN",
-                value=datetime.strptime(settings.DEFAULT_BACEN_START_DATE, "%Y-%m-%d").date(),
-                key="bacen_inicio",
-            )
-            bacen_fim = st.date_input(
-                "Fim BACEN",
-                value=datetime.strptime(settings.DEFAULT_BACEN_END_DATE, "%Y-%m-%d").date(),
-                key="bacen_fim",
-            )
+            sub_c1, sub_c2 = st.columns(2)
+            with sub_c1:
+                bacen_inicio = st.date_input(
+                    "Início BACEN",
+                    value=st.session_state.get("bacen_inicio", datetime.strptime(settings.DEFAULT_BACEN_START_DATE, "%Y-%m-%d").date()),
+                    key="bacen_inicio",
+                )
+            with sub_c2:
+                bacen_fim = st.date_input(
+                    "Fim BACEN",
+                    value=st.session_state.get("bacen_fim", datetime.strptime(settings.DEFAULT_BACEN_END_DATE, "%Y-%m-%d").date()),
+                    key="bacen_fim",
+                )
 
-        with col2:
+        col1_b3, col2_b3 = st.columns(2)
+
+        with col1_b3:
             st.markdown("##### 📈 B3 (Cotações)")
-            b3_inicio = st.date_input(
-                "Início B3",
-                value=datetime.strptime(settings.DEFAULT_B3_START_DATE, "%Y-%m-%d").date(),
-                key="b3_inicio",
-            )
-            b3_fim = st.date_input(
-                "Fim B3 (exclusivo)",
-                value=datetime.strptime(settings.DEFAULT_B3_END_DATE, "%Y-%m-%d").date(),
-                key="b3_fim",
-            )
+            sub_c3, sub_c4 = st.columns(2)
+            with sub_c3:
+                b3_inicio = st.date_input(
+                    "Início B3",
+                    value=st.session_state.get("b3_inicio", datetime.strptime(settings.DEFAULT_B3_START_DATE, "%Y-%m-%d").date()),
+                    key="b3_inicio",
+                )
+            with sub_c4:
+                b3_fim = st.date_input(
+                    "Fim B3 (exclusivo)",
+                    value=st.session_state.get("b3_fim", datetime.strptime(settings.DEFAULT_B3_END_DATE, "%Y-%m-%d").date()),
+                    key="b3_fim",
+                )
 
         st.markdown("##### 📄 CVM (Demonstrações Financeiras DFP)")
         anos_disponiveis = list(range(2010, datetime.now().year + 1))
         cvm_anos = st.multiselect(
             "Anos de Exercício CVM",
             options=anos_disponiveis,
-            default=list(range(settings.DEFAULT_CVM_START_YEAR, settings.DEFAULT_CVM_END_YEAR + 1)),
+            default=st.session_state.get("cvm_anos", list(range(settings.DEFAULT_CVM_START_YEAR, settings.DEFAULT_CVM_END_YEAR + 1))),
             key="cvm_anos",
         )
 
-        if st.button("⏱️ Aplicar Período Padrão B3/BACEN a Todas as Fontes"):
-            st.session_state["bacen_inicio"] = datetime.strptime(settings.DEFAULT_BACEN_START_DATE, "%Y-%m-%d").date()
-            st.session_state["bacen_fim"] = datetime.strptime(settings.DEFAULT_BACEN_END_DATE, "%Y-%m-%d").date()
-            st.session_state["b3_inicio"] = datetime.strptime(settings.DEFAULT_B3_START_DATE, "%Y-%m-%d").date()
-            st.session_state["b3_fim"] = datetime.strptime(settings.DEFAULT_B3_END_DATE, "%Y-%m-%d").date()
+        if st.button("⏱️ Resetar para período padrão"):
+            st.session_state["reset_dates_flag"] = True
             st.rerun()
 
-    # Expander de Modo de Execução
-    with st.expander("🔑 Modo de Execução & Autenticação", expanded=False):
-        senha_digitada = st.text_input(
-            "Senha de Acesso DataOps",
-            type="password",
-            help="Deixe em branco ou informe senha para liberar o modo produção.",
-        )
-
-        senha_esperada = None
-        try:
-            senha_esperada = st.secrets.get("dataops_password")
-        except Exception:
-            pass
-
-        modo_resultado = autorizar(senha_digitada, senha_esperada)
-        st.session_state["dataops_modo"] = modo_resultado
-
-        if modo_resultado == "producao":
-            st.success("Autenticação realizada com sucesso! Modo Produção ativo.")
-        else:
-            st.info(
-                "Modo Sandbox ativo. Execuções em sandbox salvam arquivos temporários "
-                "e possuem restrições de volume de tickers sem impactar os dados oficiais."
-            )
-
-    # Validações prévias
+    modo_resultado = st.session_state.get("dataops_modo", "sandbox")
     erros_validacao: List[str] = []
 
     if not tickers_selecionados:
@@ -166,7 +215,6 @@ def render() -> None:
     for err in erros_validacao:
         aviso("error", err)
 
-    # Botão Iniciar
     botao_desabilitado = len(erros_validacao) > 0
 
     if st.button("🚀 Iniciar Pipeline de Dados", disabled=botao_desabilitado, type="primary"):
@@ -179,5 +227,120 @@ def render() -> None:
         )
         orchestrator = PipelineOrchestrator(params)
         set_dataops_pipeline(params, orchestrator)
-        st.success("Pipeline inicializado com sucesso! Pronto para execução dos passos.")
         st.rerun()
+
+def _render_painel_execucao(orchestrator: PipelineOrchestrator) -> None:
+    """Renderiza a interface de execução sequencial e relatórios."""
+    col_act1, col_act2 = st.columns([1, 1])
+    with col_act1:
+        if st.button("🔄 Voltar aos Parâmetros"):
+            reset_dataops_pipeline()
+            st.rerun()
+    with col_act2:
+        if st.button("🧹 Limpar Memória", type="secondary"):
+            limpar_memoria_dataops()
+            st.success("Memória e cache limpos com sucesso!")
+
+    st.markdown("### 🚀 Execução do Pipeline")
+    aviso("info", "Executando carga completa (Bronze ➔ Prata ➔ Ouro)...")
+
+    from src.etl.warehouse.persistence import Persistence
+
+    persistence = Persistence()
+
+    logs = st.session_state.get("dataops_logs", [])
+    with st.expander(
+        f"📜 Histórico de Logs:)", expanded=True
+    ):
+        fontes_disponiveis = ["TODAS"] + sorted(
+            list({l["fonte"] for l in logs if "fonte" in l})
+        )
+        niveis_disponiveis = ["TODOS", "INFO", "WARNING", "ERROR"]
+
+        col_f1, col_f2 = st.columns(2)
+        with col_f1:
+            filtro_fonte = st.selectbox(
+                "Filtrar por Fonte",
+                options=fontes_disponiveis,
+                key="log_f_fonte",
+            )
+        with col_f2:
+            filtro_nivel = st.selectbox(
+                "Filtrar por Nível",
+                options=niveis_disponiveis,
+                key="log_f_nivel",
+            )
+
+        log_placeholder = st.empty()
+
+        def _render_logs_em_tempo_real() -> None:
+            logs_atuais = st.session_state.get("dataops_logs", [])
+            logs_filtrados = logs_atuais
+            if filtro_fonte != "TODAS":
+                logs_filtrados = [
+                    l for l in logs_filtrados if l.get("fonte") == filtro_fonte
+                ]
+            if filtro_nivel != "TODOS":
+                logs_filtrados = [
+                    l for l in logs_filtrados if l.get("level") == filtro_nivel
+                ]
+
+            log_str = "\n".join(
+                f"[{l['timestamp']}] [{l['level']}] [{l['fonte']}] [{l['etapa']}] {l['message']}"
+                for l in logs_filtrados
+            )
+            log_placeholder.code(
+                log_str if log_str else "Aguardando eventos...", language="text"
+            )
+
+        def log_callback(event: Dict[str, Any]) -> None:
+            add_dataops_log(event)
+            _render_logs_em_tempo_real()
+
+        orchestrator.logger.add_handler(log_callback)
+
+        resultados = orchestrator.resultados
+        if not resultados:
+            steps = orchestrator.steps()
+            try:
+                for step in steps:
+                    res = orchestrator.run_step(step.step_id)
+                    if not res.ok:
+                        st.error(f"❌ Falha em {step.rotulo}: {res.error}")
+                        break
+            except Exception as e:
+                st.error(f"❌ Erro fatal na execução do pipeline: {e}")
+
+        _render_logs_em_tempo_real()
+
+    st.markdown("### 🏥 Relatório de Saúde (Health Report)")
+    modo_atual = st.session_state.get("dataops_modo", "sandbox")
+    report = persistence.health_report(modo=modo_atual)
+
+    for tabela, stats in report.items():
+        diverge_icon = "⚠️" if stats.get("divergencia") else "✅"
+        st.info(
+            f"{diverge_icon} **{tabela}**: Parquet: {stats.get('linhas_parquet', 0)} | "
+            f"Neon: {stats.get('linhas_neon', 0)} | "
+            f"Fonte: {stats.get('fonte_ativa', 'N/A')} | "
+            f"Divergência: {stats.get('divergencia', False)}"
+        )
+
+def render() -> None:
+    """Renderiza a visão do DataOps Control Tower."""
+    header(
+        titulo="⚙️ DataOps Control Tower",
+        subtitulo="Orquestração e monitoramento do pipeline de dados.",
+        mostrar_botao_voltar=True,
+    )
+
+    _render_autenticacao()
+
+
+    params = get_dataops_params()
+    orchestrator: Optional[PipelineOrchestrator] = st.session_state.get("dataops_orchestrator")
+
+    if params is None or orchestrator is None:
+        _render_formulario()
+    else:
+        _render_painel_execucao(orchestrator)

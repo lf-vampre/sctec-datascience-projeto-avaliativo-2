@@ -4,7 +4,8 @@ Define a estrutura de navegação, os filtros globais e o estado do pipeline Dat
 Sem leitura de dados ou I/O neste módulo.
 """
 
-from typing import Any, Dict, Optional
+import gc
+from typing import Any, Dict, List, Optional
 import streamlit as st
 
 from src.config.settings import (
@@ -51,6 +52,9 @@ def init_state() -> None:
     if "dataops_orchestrator" not in st.session_state:
         st.session_state["dataops_orchestrator"] = None
 
+    if "dataops_logs" not in st.session_state:
+        st.session_state["dataops_logs"] = []
+
 
 def ir_para(modo: str, aba: str = "d1_macro") -> None:
     """Altera o modo de navegação ativo ("dataops" ou "bi") e a aba inicial."""
@@ -78,9 +82,28 @@ def set_dataops_pipeline(params: PipelineParams, orchestrator: PipelineOrchestra
     st.session_state["dataops_params"] = params
     st.session_state["dataops_modo"] = params.modo
     st.session_state["dataops_orchestrator"] = orchestrator
+    st.session_state["dataops_logs"] = []
 
 
 def reset_dataops_pipeline() -> None:
-    """Limpa o orquestrador e parâmetros do DataOps ao alterar configurações."""
+    """Limpa o orquestrador, logs e parâmetros do DataOps ao alterar configurações."""
     st.session_state["dataops_params"] = None
     st.session_state["dataops_orchestrator"] = None
+    st.session_state["dataops_logs"] = []
+
+
+def add_dataops_log(log_event: Dict[str, Any], limit: int = 500) -> None:
+    """Adiciona evento de log no estado mantendo limite máximo em memória."""
+    if "dataops_logs" not in st.session_state:
+        st.session_state["dataops_logs"] = []
+
+    st.session_state["dataops_logs"].append(log_event)
+    if len(st.session_state["dataops_logs"]) > limit:
+        st.session_state["dataops_logs"] = st.session_state["dataops_logs"][-limit:]
+
+
+def limpar_memoria_dataops() -> None:
+    """Força coleta de lixo, limpa cache de dados e reseta estado do orquestrador."""
+    reset_dataops_pipeline()
+    st.cache_data.clear()
+    gc.collect()
