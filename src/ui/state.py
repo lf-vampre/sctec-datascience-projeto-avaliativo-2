@@ -4,8 +4,10 @@ Define a estrutura de navegação, os filtros globais e o estado do pipeline Dat
 Sem leitura de dados ou I/O neste módulo.
 """
 
+from __future__ import annotations
+
 import gc
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 import streamlit as st
 
 from src.config.settings import (
@@ -14,8 +16,11 @@ from src.config.settings import (
     DEFAULT_CVM_START_YEAR,
 )
 from src.config.universe import COMPANIES
-from src.etl.pipeline import PipelineOrchestrator
+#from src.etl.pipeline import PipelineOrchestrator
 from src.models.contracts import PipelineParams
+
+if TYPE_CHECKING:
+    from src.etl.pipeline import PipelineOrchestrator
 
 
 def get_default_filtros() -> Dict[str, Any]:

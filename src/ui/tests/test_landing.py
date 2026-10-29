@@ -1,6 +1,8 @@
 import sys
 from unittest.mock import MagicMock
 import pytest
+import subprocess
+from pathlib import Path
 
 mock_streamlit = MagicMock()
 mock_streamlit.session_state = {}
@@ -40,13 +42,17 @@ def test_landing_navigation_state_flow():
 
 
 def test_lazy_loading_import_isolation():
-    """Valida RNF-01: módulos de ETL, data_loader e plotly não devem estar em sys.modules na landing."""
-    heavy_modules = [
-        "src.etl",
-        "src.etl.pipeline",
-        "src.ui.data_loader",
-        "src.ui.dashboards",
-        "plotly",
-    ]
-    for module in heavy_modules:
-        assert module not in sys.modules, f"Módulo pesado '{module}' foi carregado indevidamente em memória."
+    """RNF-01: a landing não pode carregar ETL, loader, dashboards nem plotly."""
+    root = Path(__file__).resolve().parents[3]
+    code = (
+        "import sys\n"
+        "from unittest.mock import MagicMock\n"
+        "sys.modules['streamlit'] = MagicMock()\n"
+        "import src.ui.landing, src.ui.state\n"
+        "heavy = ['src.etl', 'src.etl.pipeline', 'src.ui.data_loader', "
+        "'src.ui.dashboards', 'plotly']\n"
+        "loaded = [m for m in heavy if m in sys.modules]\n"
+        "assert not loaded, f'carregados: {loaded}'\n"
+    )
+    res = subprocess.run([sys.executable, "-c", code], cwd=root, capture_output=True, text=True)
+    assert res.returncode == 0, res.stderr

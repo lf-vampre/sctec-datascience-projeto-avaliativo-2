@@ -3,6 +3,7 @@
 from pathlib import Path
 import pandas as pd
 import pytest
+import json
 
 from src.etl.warehouse.persistence import Persistence
 
@@ -70,3 +71,17 @@ def test_load_fallback_when_neon_unavailable(tmp_path: Path, monkeypatch):
     assert loaded.attrs.get("fonte") == "parquet"
     assert len(loaded) == 1
     assert loaded["col"].iloc[0] == 100
+
+def test_manifest_registra_total_real_apos_upsert(tmp_path: Path, monkeypatch):
+    monkeypatch.setattr("src.utils.paths.DATA_DIR", tmp_path / "data")
+    monkeypatch.setattr("src.utils.paths.SANDBOX_DIR", tmp_path / "data" / "_sandbox")
+
+    p = Persistence()
+    p.save("gold", "fato_macro", pd.DataFrame({"sk_tempo": [1, 2], "valor": [1.0, 2.0]}),
+           partition_cols=["sk_tempo"], modo="sandbox")
+    p.save("gold", "fato_macro", pd.DataFrame({"sk_tempo": [3], "valor": [3.0]}),
+           partition_cols=["sk_tempo"], modo="sandbox")
+
+    manifest_path = tmp_path / "data" / "_sandbox" / "gold" / "_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert manifest["fato_macro"]["linhas"] == 3  # total real, não as 1 do último save    

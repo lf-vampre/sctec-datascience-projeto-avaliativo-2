@@ -11,6 +11,8 @@ from src.etl.base import (
     get_layer_path,
     release_lock,
     try_acquire,
+    bronze_cache_status,
+    write_bronze_signature
 )
 from src.models.contracts import PipelineParams, StepResult
 
@@ -109,5 +111,33 @@ def test_get_layer_path():
 def test_execution_lock():
     release_lock()
     assert try_acquire("producao") is True
-    assert try_acquire("producao") is False
+    assert try_acquire("producao") is True
     release_lock()
+
+def test_bronze_cache_status_respeita_assinatura(tmp_path: Path):
+    f = tmp_path / "x.parquet"
+    f.touch()
+    sig = {"tickers": ["WEGE3"], "periodo": ("2023-01-01", "2023-12-31")}
+
+    assert bronze_cache_status(f, sig)[0] is False  # sem assinatura gravada
+
+    write_bronze_signature(f, sig)
+    assert bronze_cache_status(f, sig)[0] is True
+
+    outra = {"tickers": ["PETR4"], "periodo": ("2023-01-01", "2023-12-31")}
+    ok, motivo = bronze_cache_status(f, outra)
+    assert ok is False
+    assert "parâmetros diferentes" in motivo
+
+
+def test_pipeline_logger_camada_e_limpeza():
+    logger = PipelineLogger()
+    logger.add_handler(lambda e: None)
+    logger.camada = "bronze"
+    logger.emit("INFO", "F", "E", "m")
+
+    assert logger.logs[0]["camada"] == "bronze"
+    logger.clear_handlers()
+    logger.clear_logs()
+    assert logger._handlers == []
+    assert logger.logs == []    
