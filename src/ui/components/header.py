@@ -31,7 +31,7 @@ def header(
 
     st.markdown(
         f"""
-        <div class="fx-header-block">
+        <div class="fx-header-block" style="margin-top:-20px;">
             <h1 class="fx-header-title">{safe_titulo}</h1>
             {sub_html}
         </div>

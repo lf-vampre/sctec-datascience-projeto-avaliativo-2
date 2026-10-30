@@ -311,8 +311,12 @@ class Persistence:
         filters: Optional[Union[Dict[str, Any], List[Tuple[str, str, Any]]]] = None,
         columns: Optional[List[str]] = None,
         modo: str = "producao",
+        somente_parquet: bool = False,
     ) -> pd.DataFrame:
-        """Carrega os dados do Neon (fallback Parquet em produção) ou estritamente Parquet no modo sandbox."""
+        """Carrega os dados do Neon (fallback Parquet em produção) ou estritamente Parquet no modo sandbox.
+
+        somente_parquet=True ignora o Neon em produção (evita nova tentativa de conexão após falha prévia).
+        """
         self._validate_layer_and_name(layer, name)
         self._validate_columns(columns)
         self._validate_filters(filters)
@@ -331,7 +335,7 @@ class Persistence:
             df.attrs["fonte"] = "empty"
             return df
 
-        if db.is_available():
+        if not somente_parquet and db.is_available():
             try:
                 engine = db.get_engine()
                 if engine is not None:

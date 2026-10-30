@@ -77,6 +77,7 @@ DEFAULT_CVM_END_YEAR: int = 2023
 # TTLs e Caches
 # ------------------------------------------------------------------------------
 CACHE_TTL_GOLD_SECONDS: int = 3600  # 1 hora para dados Ouro na UI
+CACHE_TTL_DIM_SECONDS: int = 21600  # 6 horas para dimensões na UI
 BRONZE_TTL_DAYS: int = 1            # Reutilização de coleta Bronze no DataOps
 
 # ------------------------------------------------------------------------------
