@@ -44,7 +44,7 @@ A utilização do cadastro oficial (`cad_cia_aberta.csv`) permite:
 
 ---
 
-## 4. Pipeline de Engenharia de Dados
+## 4. Pipeline de Engenharia de Dados (DataOps)
 
 ### 4.1. Arquitetura da Camada Bronze
 
@@ -57,7 +57,7 @@ A camada **Bronze** adota a Arquitetura Medalhão para ingestão e armazenamento
 - **Extratores Orientados a Objetos (POO):** Cada fonte possui sua classe especialista herdada de `BaseExtractor` (`BacenExtractor`, `B3Extractor`, `CvmExtractor`, `CadastroExtractor`).
 - **Preservação de Dados Crus:** Todos os dados são ingeridos na forma original (tipagem textual de segurança para CVM/Cadastro e estruturas originais do BACEN/B3), adicionando apenas metadados de governança (`_ingest_ts` e `_run_id`).
 - **Persistência Dupla:** Armazenamento local otimizado em arquivos `.parquet` particionados (`data/bronze/`) e espelhamento no banco relacional Neon.
-- **Mecanismo de TTL (Time-To-Live):** Evita chamadas redundantes a APIs externas reaproveitando arquivos Bronze válidos dentro do janela definida (`BRONZE_TTL_DAYS`).
+- **Mecanismo de TTL e assinatura de parâmetros:** evita chamadas redundantes às APIs reaproveitando o Bronze apenas quando está dentro da janela (`BRONZE_TTL_DAYS`) **e** foi gerado com os mesmos parâmetros (ver 4.5).
 - **Gestão Eficiente de Memória:** Coleta explicita de lixo (`gc.collect()`) e liberação de ponteiros de memória (`release()`) ao processar anos/arquivos volumosos.
 - **Limitações e inconsistências encontradas:** As Limitações Conhecidas e Observações das Extrações (Camada Bronze) estáo listadas no tópico *8. Discussão e Limitações da Análise*.
 
@@ -153,6 +153,65 @@ python scripts/check_gold_sampling.py
 | **BACEN** | IPCA 12M (SGS 13522) | 01/12/2023 | 4,62% a.a. | 4,62% a.a. | 0,00% | **BATIDO (100%)** |
 | **CVM** | WEGE3 (Receita Líquida) | DFP 2023 | R$ 32.503.601.000,00 | R$ 32.840.981.000,00 | < 1,1% | **VALIDADO (Residual)** |
 | **CVM** | WEGE3 (Lucro Líquido) | DFP 2023 | R$ 5.867.615.000,00 | R$ 5.732.036.000,00 | < 2,4% | **VALIDADO (Residual)** |
+
+
+### 4.5. DataOps On-Demand (Orquestração do Pipeline)
+
+O **DataOps Control Tower** executa o pipeline completo (Bronze → Prata → Ouro) a partir da interface. Nada é carregado na abertura do app: a landing page não importa ETL, banco ou gráficos, e o módulo só é carregado quando o usuário escolhe o modo DataOps.
+
+#### Fluxo de uso
+1. **Landing → DataOps:** o usuário escolhe o modo na landing page.
+2. **Autenticação (opcional):** sem senha, a execução roda em **Sandbox**. Com a senha configurada em `dataops_password` (secrets), roda em **Produção**. A comparação é feita em tempo constante (`hmac.compare_digest`) e a senha não é guardada no estado da sessão.
+3. **Parâmetros:** seleção de tickers do universo, período do BACEN, período da B3 (data final exclusiva no `yfinance`) e anos de exercício da CVM, com validação de datas e botão para restaurar o período padrão.
+4. **Execução:** o pipeline roda de forma contínua, na ordem das 12 etapas abaixo, e **interrompe na primeira falha**.
+5. **Resultado:** logs, relatório de saúde da Ouro e avisos de falha ficam na tela até o usuário voltar aos parâmetros.
+
+| Camada | Etapas (em ordem) |
+| :--- | :--- |
+| Bronze | `cadastro.bronze` → `bacen.bronze` → `b3.bronze` → `cvm.bronze` |
+| Prata | `cadastro.silver` → `bacen.silver` → `b3.silver` → `cvm.silver` |
+| Ouro | `dims` → `bacen.gold` → `b3.gold` → `cvm.gold` |
+
+Cada etapa só roda se o pré-requisito foi concluído nesta sessão ou já existe no destino da camada anterior.
+
+#### Modos de execução
+
+| | Sandbox (sem senha) | Produção (com senha) |
+| :--- | :--- | :--- |
+| Requisições às APIs | Reais | Reais |
+| Gravação em arquivo | `data/_sandbox/` | `data/{camada}/` (Ouro em `data/gold/`) |
+| Gravação no Neon | Não | Sim (upsert transacional) |
+| Limite de tickers | Sim (`SANDBOX_MAX_TICKERS`) | Não |
+| Impacto no BI | Nenhum: o BI nunca lê `data/_sandbox/` | Atualiza a Ouro lida pelos dashboards |
+
+Isso permite expor o DataOps em um app público sem que um visitante altere a base usada pelos dashboards. O modo Sandbox apenas para demonstrar o fluxo real do pipeline de dados.
+
+#### Logs e progresso
+- **Logs em tempo real:** cada evento traz data/hora, nível, camada, fonte (classe responsável), etapa e mensagem. Exemplo: `[Bronze - CadastroExtractor]`.
+- **Filtros:** por fonte e por nível (`INFO`, `WARNING`, `ERROR`).
+- **Limite em memória:** apenas os últimos 500 eventos são mantidos na sessão.
+- **Falhas visíveis:** a etapa com erro é destacada na tela com a mensagem retornada, sem exibir stacktrace.
+
+#### Reaproveitamento do Bronze
+Antes de baixar dados, cada extrator verifica se o Bronze existente pode ser reutilizado. O reuso exige **as duas condições**:
+- arquivo dentro do TTL (`BRONZE_TTL_DAYS`);
+- **parâmetros idênticos** aos da carga que o gerou (tickers, períodos, anos, séries), registrados em um arquivo `.meta.json` ao lado de cada Parquet.
+
+Se qualquer parâmetro mudar, o Bronze é extraído novamente (requisição a API) e o log informa o motivo. O Bronze funciona como *snapshot* do último run, sem acumular tickers de execuções anteriores.
+
+#### Gestão de memória
+- **Por etapa:** o orquestrador libera objetos e executa `gc.collect()` ao final de cada etapa, inclusive em caso de erro.
+- **Ao fim do pipeline:** limpeza automática do cache de dados (`st.cache_data.clear()`), remoção dos handlers de log e descarte do orquestrador. Apenas o resumo das etapas e os logs (texto) permanecem na sessão para consulta.
+- **Reiniciar:** o botão "Voltar aos Parâmetros" descarta também o resumo e os logs.
+
+#### Relatório de saúde da Ouro
+Ao final da execução, o DataOps exibe para cada tabela da Ouro:
+- linhas no Parquet e no Neon (`COUNT`, sem carregar os dados);
+- fonte ativa da leitura (Neon, Parquet de fallback ou sandbox);
+- **divergência**, quando Neon, Parquet e `_manifest.json` não concordam. A divergência é uma **informação**, não um erro.
+
+> 🚧 Prints do DataOps (formulário, execução com logs e relatório de saúde) a incluir na Seção 10 (Card 11).
+
 
 ---
 
