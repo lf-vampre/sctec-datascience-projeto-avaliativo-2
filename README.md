@@ -337,6 +337,13 @@ Ao final da execução, o DataOps exibe para cada tabela da Ouro:
 ## 7. Principais Resultados e Evidências Numéricas
 > 🚧 A preencher no Card 10 (Trello)
 
+A análise da base macroeconômica consolidada (2019–2023) revelou as seguintes evidências e achados observados nos dados do BACEN:
+
+* **Pico da Selic Meta:** A taxa básica de juros atingiu seu valor máximo do período em **agosto de 2022**, situando-se em **13,75% a.a.**, patamar no qual permaneceu estável durante o ciclo de manutenção até **agosto de 2023**.
+* **Pico do Juro Real Ex-Post:** O maior nível de Juro Real Ex-Post (equação de Fisher) observado no recorte ocorreu em **setembro de 2023**, alcançando **7,57% a.a.**, resultado da desaceleração do IPCA 12M acumulado aliada ao início gradual do ciclo de cortes da Selic.
+* **Comportamento do Câmbio (PTAX):** O dólar PTAX registrou média de **R$ 5,16** no período filtrado, com janelas de valorização acentuada durante o biênio 2020–2021.
+* **Atividade Econômica vs. Política Monetária:** O indicador dessazonalizado do IBC-Br manteve tendência de recuperação pós-2020 mesmo durante o ciclo de aperto monetário iniciado em março de 2021.
+
 ---
 
 ## 8. Discussão e Limitações da Análise
@@ -347,6 +354,14 @@ Ao final da execução, o DataOps exibe para cada tabela da Ouro:
 - **Janela de Amostra:** A análise de mercado limita-se à janela temporal configurada (2019–2023), impactando a representatividade estatística.
 
 - **Agrupamento Setorial:** Classificação analítica própria para garantia de comparabilidade.
+
+- **Correlação de Níveis vs. Variações:** As matrizes de correlação em níveis entre séries macroeconômicas podem apresentar correlações espúrias decorrentes de tendências estocásticas compartilhadas. Recomenda-se a análise complementar em modo de variações.
+
+- **Granularidade das Séries:** Séries com frequências nativas distintas (Selic e PTAX diárias vs. IPCA e IBC-Br mensais) exigem alinhamento temporal e regras específicas de agregação.
+
+- **Taxas de Juros (Meta vs. Efetiva):** A Selic Meta reflete as metas estabelecidas pelo COPOM, enquanto a Selic Efetiva (SGS 1178) representa as operações ponderadas over do mercado.
+
+- **Ausência de Causalidade:** Associação estatística e coeficientes de correlação não implicam relação de causalidade direta ou imediata entre as variáveis analisadas.
 
 ### 8.1. Limitações Conhecidas e Observações das Extrações (Camada Bronze)
 
@@ -393,6 +408,18 @@ Ao final da execução, o DataOps exibe para cada tabela da Ouro:
 - **CSS Isolado (`theme.css`)**: Estilização baseada em classes customizadas com prefixo `.fx-` (`.fx-card`, `.fx-hero`, `.fx-badge`, `.fx-header-title`), evitando contaminação e colisões com o CSS interno do Streamlit.
 - **Injeção Resiliente (`style_loader.py`)**: A função `inject_css()` injeta o arquivo de estilos isolados via `st.markdown(..., unsafe_allow_html=True)` com tratamento de exceção resiliente a falhas de I/O.
 - **Sincronia com Tema Nativo**: O arquivo `.streamlit/config.toml` reflete rigorosamente as cores e fontes definidas nos tokens do projeto.
+
+### 10.2. Dashboard 1 — Inteligência Macroeconômica (BACEN)
+
+O Dashboard 1 apresenta a visão consolidada das variáveis macroeconômicas brasileiras organizadas em 5 abas temáticas, com filtros locais colapsáveis, opção de exportação em CSV e nota de não-causalidade:
+
+* **Visão Geral:** KPIs de Selic Meta, IPCA 12M, Juro Real Ex-Post e PTAX com variação em 12 meses (delta) e gráfico integrado da política monetária.
+* **Câmbio (PTAX):** Evolução diária do câmbio com bandas de períodos acima da média e dispersão PTAX x IPCA.
+* **Atividade Econômica:** Trajetória do IBC-Br com ajuste sazonal sobreposta à Selic Meta e bandas de ciclos monetários (aperto, corte e manutenção).
+* **Correlações:** Heatmap de Pearson e matriz de defasagens temporais entre câmbio e inflação.
+* **Dados & Metodologia:** Tabela da base mensal processada e nota técnica sobre a Equação de Fisher.
+
+*(Prints da aplicação salvos em `docs/img/`)*
 
 ---
 

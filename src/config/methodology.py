@@ -11,6 +11,14 @@ METHODOLOGY_JURO_REAL: str = (
 )
 
 # ------------------------------------------------------------------------------
+# Correlação de Pearson
+# ------------------------------------------------------------------------------
+METHODOLOGY_CORR_PEARSON: str = (
+    "**r** representa o coeficiente de correlação de Pearson entre o Dólar PTAX do mês base e o IPCA 12M defasado em **k** meses."
+    " **n** indica o número de meses observados para o cálculo."
+)
+
+# ------------------------------------------------------------------------------
 # Taxa Livre de Risco do Sharpe
 # ------------------------------------------------------------------------------
 _nome_risco_livre = BACEN_SERIES.get(SERIE_RISCO_LIVRE, {}).get("nome", SERIE_RISCO_LIVRE)

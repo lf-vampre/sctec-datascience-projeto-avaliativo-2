@@ -73,6 +73,7 @@ def bandas_periodo(
     if not paleta:
         return fig
 
+    rotulos_adicionados = set()
     for i, (inicio, fim, rotulo) in enumerate(segmentos):
         cor = paleta[i % len(paleta)]
         fig.add_vrect(
@@ -83,18 +84,19 @@ def bandas_periodo(
             line_width=0,
             layer="below",
         )
-        # Traço sem dados: existe só para a banda aparecer na legenda
-        fig.add_trace(
-            go.Scatter(
-                x=[None],
-                y=[None],
-                mode="markers",
-                marker=dict(symbol="square", size=10, color=cor, opacity=0.5),
-                name=rotulo,
-                showlegend=True,
-                hoverinfo="skip",
+        if rotulo not in rotulos_adicionados:
+            fig.add_trace(
+                go.Scatter(
+                    x=[None],
+                    y=[None],
+                    mode="markers",
+                    marker=dict(symbol="square", size=10, color=cor, opacity=0.5),
+                    name=rotulo,
+                    showlegend=True,
+                    hoverinfo="skip",
+                )
             )
-        )
+            rotulos_adicionados.add(rotulo)
     return fig
 
 

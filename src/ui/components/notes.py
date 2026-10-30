@@ -13,6 +13,7 @@ METODOLOGIA_MAP = {
     "bancos": methodology.METHODOLOGY_BANCOS,
     "DM-01": methodology.METHODOLOGY_JURO_REAL,
     "DM-02": methodology.METHODOLOGY_SHARPE,
+    "pearson": methodology.METHODOLOGY_CORR_PEARSON,
 }
 
 

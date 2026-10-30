@@ -90,6 +90,11 @@ def painel_mensal(
         if col not in pivot.columns:
             pivot[col] = np.nan
 
+    # Recalculo dinamico do Juro Real por Fisher se a coluna estiver totalmente nula
+    if pivot["JURO_REAL_EXPOST"].isna().all() and "SELIC_META" in pivot.columns and "IPCA_12M" in pivot.columns:
+        from src.etl.warehouse.metrics_calculator import juro_real_fisher
+        pivot["JURO_REAL_EXPOST"] = juro_real_fisher(pivot["SELIC_META"], pivot["IPCA_12M"])
+
     return pivot[colunas_esperadas].sort_index()
 
 
@@ -138,13 +143,16 @@ def kpis_macro(
             else:
                 res["ipca_motivo"] = "Janela mensal menor que 12 meses"
 
-    # 3. Juro Real Ex-Post
+    # 3. Juro Real Ex-Post (converte fração decimal para % a.a. nos KPIs)
     if not painel.empty and "JURO_REAL_EXPOST" in painel.columns:
         s_jr = painel["JURO_REAL_EXPOST"].dropna()
         if not s_jr.empty:
-            res["juro_real"] = float(s_jr.iloc[-1])
+            val_jr = float(s_jr.iloc[-1])
+            res["juro_real"] = val_jr * 100.0 if abs(val_jr) <= 1.0 else val_jr
             if len(s_jr) >= 13:
-                res["juro_real_delta_12m"] = float(s_jr.iloc[-1] - s_jr.iloc[-13])
+                val_prev = float(s_jr.iloc[-13])
+                delta_jr = val_jr - val_prev
+                res["juro_real_delta_12m"] = delta_jr * 100.0 if abs(delta_jr) <= 1.0 else delta_jr
             else:
                 res["juro_real_motivo"] = "Janela mensal menor que 12 meses"
 
@@ -174,55 +182,66 @@ def kpis_macro(
 def ciclos_selic(
     selic_diaria: pd.Series, dias_estavel: int = 90
 ) -> pd.DataFrame:
-    """Segmenta a série da Selic em ciclos de aperto, corte e manutenção."""
+    """Segmenta a série da Selic em ciclos de aperto, corte e manutenção.
+    
+    Identifica blocos de taxa constante. Intervalos contínuos de estabilidade
+    com duração maior ou igual a dias_estavel são classificados como 'manutencao'.
+    Intervalos de mudança contínua são classificados como 'aperto' ou 'corte'
+    e fundidos em blocos consolidados.
+    """
     clean = selic_diaria.dropna().sort_index()
     if clean.empty:
         return pd.DataFrame(columns=["inicio", "fim", "tipo", "taxa_inicio", "taxa_fim"])
 
-    # Identificar mudanças de taxa
-    mudancas = clean[clean.diff() != 0]
-    if mudancas.empty:
-        return pd.DataFrame([{
-            "inicio": clean.index[0],
-            "fim": clean.index[-1],
-            "tipo": "manutencao",
-            "taxa_inicio": float(clean.iloc[0]),
-            "taxa_fim": float(clean.iloc[-1]),
-        }])
+    # Agrupa por blocos de valor contínuo
+    mudancas = clean.ne(clean.shift()).cumsum()
 
-    ciclos = []
-    i = 0
-    dates = mudancas.index
-    n = len(dates)
+    blocos = []
+    prev_val = None
 
-    while i < n:
-        dt_start = dates[i]
-        val_start = float(clean.loc[dt_start])
-        dt_end = dates[i + 1] if i + 1 < n else clean.index[-1]
-        val_end = float(clean.loc[dt_end]) if i + 1 < n else float(clean.iloc[-1])
+    for _, group in clean.groupby(mudancas):
+        dt_ini = group.index[0]
+        dt_fim = group.index[-1]
+        val = float(group.iloc[0])
+        dias = (dt_fim - dt_ini).days + 1
 
-        dias = (dt_end - dt_start).days
-
-        if val_end > val_start:
+        if prev_val is None:
+            tipo = "manutencao"
+        elif dias >= dias_estavel:
+            tipo = "manutencao"
+        elif val > prev_val:
             tipo = "aperto"
-        elif val_end < val_start:
+        elif val < prev_val:
             tipo = "corte"
         else:
             tipo = "manutencao"
 
-        if tipo == "manutencao" and dias < dias_estavel and i > 0:
-            pass
-
-        ciclos.append({
-            "inicio": dt_start,
-            "fim": dt_end,
+        blocos.append({
+            "inicio": dt_ini,
+            "fim": dt_fim,
             "tipo": tipo,
-            "taxa_inicio": val_start,
-            "taxa_fim": val_end,
+            "taxa_inicio": val if prev_val is None else prev_val,
+            "taxa_fim": val,
         })
-        i += 1
+        prev_val = val
 
-    return pd.DataFrame(ciclos)
+    if not blocos:
+        return pd.DataFrame(columns=["inicio", "fim", "tipo", "taxa_inicio", "taxa_fim"])
+
+    # Funde blocos consecutivos do mesmo tipo
+    ciclos_fundidos = []
+    atual = blocos[0].copy()
+
+    for b in blocos[1:]:
+        if b["tipo"] == atual["tipo"]:
+            atual["fim"] = b["fim"]
+            atual["taxa_fim"] = b["taxa_fim"]
+        else:
+            ciclos_fundidos.append(atual)
+            atual = b.copy()
+    ciclos_fundidos.append(atual)
+
+    return pd.DataFrame(ciclos_fundidos)
 
 
 def janelas_acima_media(
@@ -290,9 +309,9 @@ def correlacao_defasada(
         valid = pd.DataFrame({"x": x_shifted, "y": df_clean[y]}).dropna()
         if len(valid) >= 3:
             r = float(valid["x"].corr(valid["y"]))
-            resultados.append({"defasagem": k, "r": r, "n_obs": len(valid)})
+            resultados.append({"Defasagem (meses)": k, "Correlação de Pearson (r)": r, "Observações (n)": len(valid)})
         else:
-            resultados.append({"defasagem": k, "r": np.nan, "n_obs": len(valid)})
+            resultados.append({"Defasagem (meses)": k, "Correlação de Pearson (r)": np.nan, "Observações (n)": len(valid)})
 
     return pd.DataFrame(resultados)
 

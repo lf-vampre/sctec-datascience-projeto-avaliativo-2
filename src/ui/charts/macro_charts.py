@@ -80,7 +80,9 @@ def fig_politica_monetaria(painel: pd.DataFrame) -> go.Figure:
         return figura_vazia("Dados insuficientes para política monetária")
 
     fig.update_layout(
-        title=dict(text="Política Monetária: Selic Meta, IPCA 12M e Juro Real Ex-Post"),
+        title=dict(text="Política Monetária: Selic Meta, IPCA 12M e Juro Real Ex-Post", y=0.95),
+        margin=dict(t=90),
+        legend=dict(x=1.0, xanchor="right", y=1.12, yanchor="bottom"),
         xaxis=dict(title=dict(text="Ano-Mês")),
         yaxis=dict(title=dict(text="% a.a.")),
         barmode="relative",
@@ -122,7 +124,9 @@ def fig_ptax(
         bandas_periodo(fig, segmentos, cores=[theme.COLOR_TOKENS.warning])
 
     fig.update_layout(
-        title=dict(text="Evolução do Dólar PTAX e Períodos Acima da Média"),
+        title=dict(text="Evolução do Dólar PTAX e Períodos Acima da Média", y=0.95),
+        margin=dict(t=90),
+        legend=dict(x=1.0, xanchor="right", y=1.12, yanchor="bottom"),
         xaxis=dict(title=dict(text="Data")),
         yaxis=dict(title=dict(text="PTAX (R$)")),
     )
@@ -179,6 +183,7 @@ def fig_dispersao_ptax_ipca(
         title=dict(text=f"Dispersão: PTAX x IPCA 12M{txt_defasagem}"),
         xaxis=dict(title=dict(text="PTAX (R$)")),
         yaxis=dict(title=dict(text="IPCA 12M (% a.a.)")),
+        legend=dict(x=1.0, xanchor="right", y=1, yanchor="bottom"),
         annotations=[
             dict(
                 text=f"r = {r:.2f} (n = {n_obs})",
@@ -203,7 +208,7 @@ def fig_dispersao_ptax_ipca(
 def fig_ibc(
     painel: pd.DataFrame, ciclos: Optional[pd.DataFrame] = None
 ) -> go.Figure:
-    """Gráfico de linha do IBC-Br dessazonalizado com faixas sombreadas por ciclo de Selic."""
+    """Gráfico multieixo: IBC-Br (eixo primário), Selic Meta (eixo secundário) e bandas de ciclos monetários."""
     if painel.empty or "IBC_BR_SA" not in painel.columns:
         return figura_vazia("Sem dados de atividade econômica (IBC-Br)")
 
@@ -213,6 +218,7 @@ def fig_ibc(
 
     fig = go.Figure()
 
+    # IBC-Br (Eixo Y1)
     fig.add_trace(
         go.Scatter(
             x=s_ibc.index.astype(str),
@@ -224,8 +230,25 @@ def fig_ibc(
         )
     )
 
+    # Selic Meta sobreposta (Eixo Y2)
+    if "SELIC_META" in painel.columns and painel["SELIC_META"].notna().any():
+        s_selic = painel["SELIC_META"].dropna()
+        fig.add_trace(
+            go.Scatter(
+                x=s_selic.index.astype(str),
+                y=s_selic.values,
+                mode="lines",
+                name="Selic Meta (% a.a.)",
+                yaxis="y2",
+                line=dict(color=theme.COLOR_TOKENS.warning, width=1.8, dash="dot"),
+                hovertemplate="<b>%{x}</b><br>Selic Meta: %{y:.2f}% a.a.<extra></extra>",
+            )
+        )
+
+    # Bandas sombreadas de ciclos de Selic
     if ciclos is not None and not ciclos.empty:
         segmentos = []
+        cores_segmentos = []
         mapa_cores = {
             "aperto": theme.COLOR_TOKENS.negative,
             "corte": theme.COLOR_TOKENS.positive,
@@ -237,13 +260,22 @@ def fig_ibc(
             dt_ini = pd.Timestamp(row["inicio"]).strftime("%Y-%m")
             dt_fim = pd.Timestamp(row["fim"]).strftime("%Y-%m")
             segmentos.append((dt_ini, dt_fim, f"Ciclo de {tipo}"))
+            cores_segmentos.append(mapa_cores.get(tipo, theme.COLOR_TOKENS.secondary))
 
-        bandas_periodo(fig, segmentos)
+        bandas_periodo(fig, segmentos, cores=cores_segmentos)
 
     fig.update_layout(
-        title=dict(text="Atividade Econômica (IBC-Br) e Ciclos de Política Monetária"),
+        title=dict(text="Atividade Econômica (IBC-Br) vs. Selic Meta e Ciclos Monetários", y=0.95),
+        margin=dict(t=90),
+        legend=dict(x=1.0, xanchor="right", y=1.18, yanchor="bottom"),
         xaxis=dict(title=dict(text="Ano-Mês")),
-        yaxis=dict(title=dict(text="Índice")),
+        yaxis=dict(title=dict(text="IBC-Br (Índice)")),
+        yaxis2=dict(
+            title=dict(text="Selic Meta (% a.a.)"),
+            overlaying="y",
+            side="right",
+            showgrid=False,
+        ),
     )
 
     return aplicar_template(fig)
