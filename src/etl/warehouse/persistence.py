@@ -62,6 +62,13 @@ class Persistence:
         gold_dir.mkdir(parents=True, exist_ok=True)
         return gold_dir / "_manifest.json"
 
+    def _count_parquet_rows(self, file_path: Path) -> int:
+        """Total real de linhas do Parquet (após upsert), via metadados."""
+        try:
+            return pq.read_metadata(file_path).num_rows if file_path.exists() else 0
+        except Exception:
+            return 0
+
     def _update_manifest(self, name: str, rows: int, neon_ok: bool, modo: str) -> None:
         """Atualiza atômica e thread-safe o arquivo _manifest.json da Ouro."""
         manifest_path = self._get_manifest_path(modo)
@@ -157,7 +164,7 @@ class Persistence:
         if df.empty:
             file_path = self._get_parquet_path(layer, name, modo)
             if layer == "gold":
-                self._update_manifest(name, 0, False, modo)
+                self._update_manifest(name, self._count_parquet_rows(file_path), False, modo)
             return {"parquet_path": str(file_path), "rows": 0, "neon_ok": False, "warning": "DataFrame vazio"}
 
         save_df = df.copy()
@@ -185,7 +192,7 @@ class Persistence:
                 warning = f"Falha na gravação Neon: {str(e)}"
 
         if layer == "gold":
-            self._update_manifest(name, len(save_df), neon_ok, modo)
+            self._update_manifest(name, self._count_parquet_rows(file_path), neon_ok, modo)
 
         return {
             "parquet_path": str(file_path),

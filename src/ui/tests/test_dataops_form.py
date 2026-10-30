@@ -42,20 +42,23 @@ def test_dataops_form_sandbox_teto_bloqueia():
     assert botao_iniciar.disabled is True
 
 
+def _validar(at, senha: str, senha_esperada) -> None:
+    with patch("src.ui.dataops_view._obter_senha_esperada", return_value=senha_esperada):
+        at.text_input(key="input_dataops_password").set_value(senha)
+        [b for b in at.button if b.label == "Validar"][0].click().run()
+
+
 def test_dataops_form_senha_incorreta_mantem_sandbox():
     at = AppTest.from_function(_run_dataops_app).run()
-    
-    with patch.object(st, "secrets", {"dataops_password": "senha_segura_123"}):
-        at.text_input[0].set_value("senha_errada").run()
-        assert at.session_state["dataops_modo"] == "sandbox"
+    _validar(at, "senha_errada", "senha_segura_123")
+    assert at.session_state["dataops_modo"] == "sandbox"
 
 
 def test_dataops_form_senha_correta_ativa_producao():
     at = AppTest.from_function(_run_dataops_app).run()
-    
-    with patch.object(st, "secrets", {"dataops_password": "senha_segura_123"}):
-        at.text_input[0].set_value("senha_segura_123").run()
-        assert at.session_state["dataops_modo"] == "producao"
+    _validar(at, "senha_segura_123", "senha_segura_123")
+    assert at.session_state["dataops_modo"] == "producao"
+
 
 def test_senha_nao_armazenada_em_session_state():
     at = AppTest.from_function(_run_dataops_app).run()

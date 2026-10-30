@@ -6,9 +6,8 @@ from typing import Dict, List, Optional, Set
 import pandas as pd
 import requests
 
-from src.config import settings
 from src.config import universe
-from src.etl.base import BaseExtractor, PipelineLogger, bronze_is_fresh, get_layer_path
+from src.etl.base import BaseExtractor, PipelineLogger, bronze_cache_status, write_bronze_signature, get_layer_path
 from src.etl.warehouse.persistence import Persistence
 from src.models.contracts import PipelineParams, StepResult
 
@@ -50,12 +49,13 @@ class CadastroExtractor(BaseExtractor):
         target_file = bronze_dir / "cvm_cadastro.parquet"
 
         # Verificação do TTL do arquivo Bronze
-        if bronze_is_fresh(target_file, settings.BRONZE_TTL_DAYS):
+        signature = {"tickers": sorted(t.upper() for t in (params.tickers or []))}
+        reutilizar, motivo = bronze_cache_status(target_file, signature)
+
+        if reutilizar:
             self.logger.emit(
-                "INFO",
-                "CadastroExtractor",
-                "CACHE",
-                f"Arquivo Bronze recente encontrado em {target_file}. Reutilizando dados.",
+                "INFO", "CadastroExtractor", "CACHE",
+                f"Bronze reutilizado ({motivo}): {target_file}",
             )
             cached_df = self.persistence.load("bronze", "cvm_cadastro", modo=params.modo)
             return StepResult(
@@ -65,6 +65,8 @@ class CadastroExtractor(BaseExtractor):
                 paths=[str(target_file)],
                 warnings=["Reutilizado do cache Bronze (TTL)"],
             )
+
+        self.logger.emit("INFO", "CadastroExtractor", "CACHE", f"Bronze não reutilizado: {motivo}.")
 
         target_map = self._get_target_cvm_codes(params.tickers)
         target_cvm_codes: Set[int] = set(target_map.values())
@@ -187,12 +189,14 @@ class CadastroExtractor(BaseExtractor):
             layer="bronze",
             name="cvm_cadastro",
             df=df_final,
-            partition_cols=["cd_cvm" if "cd_cvm" in df_final.columns else "CD_CVM"],
+            partition_cols=None,
             modo=params.modo,
         )
 
         if save_res.get("warning"):
             warnings.append(save_res["warning"])
+
+        write_bronze_signature(target_file, signature)
 
         return StepResult(
             step_id=step_id,

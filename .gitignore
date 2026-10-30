@@ -13,12 +13,15 @@ __pycache__/
 .env
 
 # Dados efêmeros e sandbox (Bronze e Prata ignorados, Gold versionado)
-#data/bronze/*
-#!data/bronze/.gitkeep
-#data/silver/*
-#!data/silver/.gitkeep
-#data/_sandbox/*
-#!data/_sandbox/.gitkeep
+data/bronze/*
+!data/bronze/.gitkeep
+data/silver/*
+!data/silver/.gitkeep
+data/_sandbox/*
+data/_sandbox/bronze/*
+data/_sandbox/gold/*
+data/_sandbox/silver/*
+!data/_sandbox/.gitkeep
 
 # IDEs e OS
 .vscode/

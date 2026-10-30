@@ -32,7 +32,10 @@ def autorizar(senha_digitada: Optional[str], senha_esperada: Optional[str]) -> s
     if not senha_esperada or not senha_digitada:
         return "sandbox"
 
-    if hmac.compare_digest(senha_digitada.encode("utf-8"), senha_esperada.encode("utf-8")):
+    s_dig = str(senha_digitada).strip()
+    s_esp = str(senha_esperada).strip()
+
+    if hmac.compare_digest(s_dig.encode("utf-8"), s_esp.encode("utf-8")):
         return "producao"
 
     return "sandbox"
@@ -51,19 +54,24 @@ class PipelineOrchestrator:
         return self._resultados
 
     def steps(self) -> List[Step]:
-        """Devolve a lista ordenada de passos do pipeline."""
+        """Devolve a lista ordenada de passos do pipeline por camadas (Bronze ➔ Prata ➔ Ouro)."""
         return [
+            # --- BRONZE ---
             Step("cadastro.bronze", "cadastro", "bronze", "Cadastro CVM Bronze"),
-            Step("cadastro.silver", "cadastro", "silver", "Cadastro CVM Silver", depende_de="cadastro.bronze"),
-            Step("dims", "warehouse", "gold", "Dimensões Star Schema", depende_de="cadastro.silver"),
             Step("bacen.bronze", "bacen", "bronze", "BACEN SGS Bronze"),
-            Step("bacen.silver", "bacen", "silver", "BACEN SGS Silver", depende_de="bacen.bronze"),
-            Step("bacen.gold", "bacen", "gold", "BACEN SGS Gold", depende_de="bacen.silver"),
             Step("b3.bronze", "b3", "bronze", "B3 Cotações Bronze"),
-            Step("b3.silver", "b3", "silver", "B3 Cotações Silver", depende_de="b3.bronze"),
-            Step("b3.gold", "b3", "gold", "B3 Cotações Gold", depende_de="b3.silver"),
             Step("cvm.bronze", "cvm", "bronze", "CVM DFPs Bronze"),
+
+            # --- SILVER ---
+            Step("cadastro.silver", "cadastro", "silver", "Cadastro CVM Silver", depende_de="cadastro.bronze"),
+            Step("bacen.silver", "bacen", "silver", "BACEN SGS Silver", depende_de="bacen.bronze"),
+            Step("b3.silver", "b3", "silver", "B3 Cotações Silver", depende_de="b3.bronze"),
             Step("cvm.silver", "cvm", "silver", "CVM DFPs Silver", depende_de="cvm.bronze"),
+
+            # --- GOLD ---
+            Step("dims", "warehouse", "gold", "Dimensões Star Schema", depende_de="cadastro.silver"),
+            Step("bacen.gold", "bacen", "gold", "BACEN SGS Gold", depende_de="bacen.silver"),
+            Step("b3.gold", "b3", "gold", "B3 Cotações Gold", depende_de="b3.silver"),
             Step("cvm.gold", "cvm", "gold", "CVM DFPs Gold", depende_de="cvm.silver"),
         ]
 
@@ -80,7 +88,7 @@ class PipelineOrchestrator:
             raise ValueError(f"Tickers não pertencentes ao universo: {tickers_invalidos}")
 
         if params.modo == "sandbox":
-            teto = getattr(settings, "SANDBOX_MAX_TICKERS", 3)
+            teto = getattr(settings, "SANDBOX_MAX_TICKERS", 5)
             if len(params.tickers) > teto:
                 raise ValueError(
                     f"Modo sandbox aceita no máximo {teto} tickers. "
@@ -148,12 +156,12 @@ class PipelineOrchestrator:
             return StarSchemaBuilder(self.logger).run_gold("b3", self.params)
 
         if step_id == "cvm.bronze":
-            from src.etl.extractors.cvm_extractor import CVMExtractor
-            return CVMExtractor(self.logger).run_bronze(self.params)
+            from src.etl.extractors.cvm_extractor import CvmExtractor
+            return CvmExtractor(self.logger).run_bronze(self.params)
 
         if step_id == "cvm.silver":
-            from src.etl.cleaners.cvm_cleaner import CVMCleaner
-            return CVMCleaner(self.logger).run_silver(self.params)
+            from src.etl.cleaners.cvm_cleaner import CvmCleaner
+            return CvmCleaner(self.logger).run_silver(self.params)
 
         if step_id == "cvm.gold":
             from src.etl.warehouse.star_schema import StarSchemaBuilder
@@ -194,6 +202,10 @@ class PipelineOrchestrator:
             )
             self._resultados[step_id] = res
             return res
+
+        self.logger.camada = next(
+            (s.camada for s in self.steps() if s.step_id == step_id), None
+        )
 
         try:
             resultado = self._executar_passo_interno(step_id)

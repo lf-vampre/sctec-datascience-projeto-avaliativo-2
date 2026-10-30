@@ -7,8 +7,8 @@ from typing import Dict, List, Optional, Set
 import pandas as pd
 import requests
 
-from src.config import settings, universe
-from src.etl.base import BaseExtractor, PipelineLogger, bronze_is_fresh, get_layer_path
+from src.config import universe
+from src.etl.base import BaseExtractor, PipelineLogger, bronze_cache_status, write_bronze_signature, get_layer_path
 from src.etl.warehouse.persistence import Persistence
 from src.models.contracts import PipelineParams, StepResult
 from src.utils.memory import release
@@ -47,20 +47,21 @@ class CvmExtractor(BaseExtractor):
         target_tables = ["cvm_dre", "cvm_bpa", "cvm_bpp"]
         
         # Verificação do TTL nos arquivos Bronze de destino
+        signature = {
+            "tickers": sorted(t.upper() for t in (params.tickers or [])),
+            "anos": sorted(int(a) for a in (params.cvm_anos or [])),
+        }
+
         all_fresh = True
+        motivo = ""
         for table in target_tables:
-            t_file = bronze_dir / f"{table}.parquet"
-            if not bronze_is_fresh(t_file, settings.BRONZE_TTL_DAYS):
+            fresh, motivo = bronze_cache_status(bronze_dir / f"{table}.parquet", signature)
+            if not fresh:
                 all_fresh = False
                 break
 
         if all_fresh:
-            self.logger.emit(
-                "INFO",
-                "CvmExtractor",
-                "CACHE",
-                "Arquivos Bronze CVM recentes encontrados. Reutilizando dados.",
-            )
+            self.logger.emit("INFO", "CvmExtractor", "CACHE", f"Bronze CVM reutilizado ({motivo}).")
             total_rows = 0
             paths = []
             for table in target_tables:
@@ -75,6 +76,8 @@ class CvmExtractor(BaseExtractor):
                 paths=paths,
                 warnings=["Reutilizado do cache Bronze (TTL)"],
             )
+
+        self.logger.emit("INFO", "CvmExtractor", "CACHE", f"Bronze CVM não reutilizado: {motivo}.")
 
         target_cd_cvm = self._get_target_cd_cvm(params.tickers or [])
         if not target_cd_cvm:
@@ -192,12 +195,15 @@ class CvmExtractor(BaseExtractor):
                     layer="bronze",
                     name=table_key,
                     df=df_concat,
-                    partition_cols=["CD_CVM", "ano_arquivo"],
+                    partition_cols=None,
                     modo=params.modo,
                 )
 
                 total_rows_saved += save_res["rows"]
                 saved_paths.append(save_res["parquet_path"])
+
+                write_bronze_signature(bronze_dir / f"{table_key}.parquet", signature)
+
                 if save_res.get("warning"):
                     warnings.append(save_res["warning"])
                 

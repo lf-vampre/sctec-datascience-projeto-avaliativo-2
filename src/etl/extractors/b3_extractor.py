@@ -7,8 +7,7 @@ import pandas as pd
 import requests
 import yfinance as yf
 
-from src.config import settings
-from src.etl.base import BaseExtractor, PipelineLogger, bronze_is_fresh, get_layer_path
+from src.etl.base import BaseExtractor, PipelineLogger, bronze_cache_status, write_bronze_signature, get_layer_path
 from src.etl.warehouse.persistence import Persistence
 from src.models.contracts import PipelineParams, StepResult
 from src.utils.memory import release
@@ -41,12 +40,16 @@ class B3Extractor(BaseExtractor):
         target_file = bronze_dir / "b3_cotacoes.parquet"
 
         # Reaproveitamento por TTL
-        if bronze_is_fresh(target_file, settings.BRONZE_TTL_DAYS):
+        signature = {
+            "tickers": sorted(t.upper() for t in (params.tickers or [])),
+            "periodo": list(params.b3_periodo),
+        }
+        reutilizar, motivo = bronze_cache_status(target_file, signature)
+
+        if reutilizar:
             self.logger.emit(
-                "INFO",
-                "B3Extractor",
-                "CACHE",
-                f"Arquivo Bronze recente encontrado em {target_file}. Reutilizando dados.",
+                "INFO", "B3Extractor", "CACHE",
+                f"Bronze reutilizado ({motivo}): {target_file}",
             )
             cached_df = self.persistence.load("bronze", "b3_cotacoes", modo=params.modo)
             return StepResult(
@@ -56,6 +59,8 @@ class B3Extractor(BaseExtractor):
                 paths=[str(target_file)],
                 warnings=["Reutilizado do cache Bronze (TTL)"],
             )
+
+        self.logger.emit("INFO", "B3Extractor", "CACHE", f"Bronze não reutilizado: {motivo}.")
 
         tickers = params.tickers or []
         if not tickers:
@@ -170,12 +175,14 @@ class B3Extractor(BaseExtractor):
             layer="bronze",
             name="b3_cotacoes",
             df=final_df,
-            partition_cols=["ticker"],
+            partition_cols=None,
             modo=params.modo,
         )
 
         if save_res.get("warning"):
             warnings.append(save_res["warning"])
+
+        write_bronze_signature(target_file, signature)    
 
         return StepResult(
             step_id=step_id,
