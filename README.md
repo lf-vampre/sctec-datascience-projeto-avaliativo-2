@@ -351,6 +351,12 @@ Na análise fundamentalista e Contábil (CVM) foram observados os seguintes dado
 - **Rentabilidade da Carteira:** O ROE médio das companhias situou-se em 19,00% em 2023, impulsionado por empresas líderes dos setores de Materiais Básicos e Indústria.
 - **Solvência e Liquidez:** Companhias como PETR4, KLBN11, EGIE3, VALE3 e JBSS3 apresentaram Liquidez Corrente inferior ao limiar de segurança de 1,5x conjugado com Dívida Líquida positiva no exercício foco.
 
+Na análise técnica e performance do mercado de ações (B3) foram obseravdos os seguintes dados:
+
+- **Rentabilidade Normalizada (Base 100):** No período de 2021 a 2023, a carteira equiponderada dos ativos B3 registrou retorno acumulado médio de +217,60%. O ativo de maior destaque nominal no período foi **PRIO3** (+2.126,92%), impulsionado por expansão operacional no setor de óleo e gás. Por outro lado, a menor performance acumulada ficou com **LREN3** (-45,79%).
+- **Relação Risco vs. Retorno & Sharpe:** A análise da relação entre volatilidade anualizada e retorno acumulado destacou **PRIO3** com a melhor relação de Sharpe empírica do período, superando a taxa livre de risco (Selic Efetiva diária).
+- **Risco de Cauda & Drawdown:** Na avaliação de resiliência, a carteira equiponderada apresentou controle de drawdown em comparação com os papéis de maior volatilidade individual. O gráfico de área de drawdown evidenciou os momentos de maior estresse do mercado entre 2021 e 2022.
+
 ---
 
 ## 8. Discussão e Limitações da Análise
@@ -381,6 +387,11 @@ Na análise fundamentalista e Contábil (CVM) foram observados os seguintes dado
 - **Amostra Setorial ($n$ reduzido):** Setores com poucas empresas listadas apresentam maior sensibilidade em boxplots e métricas agregadas.
 
 - **Classificações Próprias:** O enquadramento em setores analíticos e o indicador `exportadora_commodities` seguem critérios definidos na arquitetura do projeto.
+
+- **Janela de Observação:** Dados restritos ao período de 2021 a 2023. Desempenhos e métricas históricas não representam garantia de rentabilidade futura.
+- **Taxa Livre de Risco & Sharpe Empírico:** O cálculo do excesso de retorno no Índice de Sharpe utiliza a série de Selic Efetiva diária (código BACEN 1178, proxy do CDI) como taxa livre de risco (DM-02). A premissa de normalidade na distribuição de retornos diários é uma simplificação estatística.
+- **Volume Financeiro Aproximado:** O volume financeiro diário é aproximado pelo produto do preço de fechamento ajustado pela quantidade negociada obtida via `yfinance`, podendo haver pequenas variações em relação ao volume financeiro oficial consolidado da B3.
+- **Preços Ajustados:** Cotações históricas utilizam ajuste automático por proventos e desdobramentos (`auto_adjust=True`).
 
 ### 8.1. Limitações Conhecidas e Observações das Extrações (Camada Bronze)
 
@@ -455,6 +466,14 @@ O Dashboard 2 apresenta uma estrutura em 4 abas para navegação executiva:
 
 4. **Dados & Metodologia:** Tabelas de demonstrativos processados segregadas por empresas industriais e instituições financeiras (sem colunas irrelevantes), alertas de qualidade e notas metodológicas CVM.
    ![Dados e Metodologia CVM](docs/img/cvm_dados.png)
+
+### 10.4. Dashboard 3 — Mercado e Risco (B3)
+O Dashboard de Mercado e Risco consolida a inteligência quantitativa de ativos negociados na B3:
+1. **Rentabilidade Normalizada (Base 100):** Comparativo temporal de desempenho normalizado no nível 100 no primeiro pregão do período. (`docs/img/d3_base100.png`)
+2. **Dispersão Risco vs. Retorno:** Volatilidade anualizada (% a.a.) no eixo X vs. Retorno acumulado (%) no eixo Y, com dimensão das bolhas proporcional ao volume financeiro. (`docs/img/d3_risco_retorno.png`)
+3. **Distribuição dos Retornos Diários:** Histograma de frequência com boxplot marginal e indicação visual da cauda no Percentil 5%. (`docs/img/d3_histograma.png`)
+4. **Área de Drawdown:** Evolução da queda percentual acumulada a partir dos topos históricos dos ativos e da carteira. (`docs/img/d3_drawdown.png`)
+5. **Médias Móveis (SMA 21 / 50):** Gráfico multilinha com preço de fechamento e médias de curto e médio prazo para análise de tendência de ativo selecionado. (`docs/img/d3_sma.png`)
 
 ---
 
