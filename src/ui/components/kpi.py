@@ -21,13 +21,15 @@ def kpi(
         label: Título descritivo do KPI.
         valor: Valor numérico a ser formatado ou None.
         delta: Variação (opcional) para exibição de seta/cor.
-        formato: 'moeda', 'percentual' ou 'numero'.
+        formato: 'moeda', 'moeda_compacta', 'percentual' ou 'numero'.
         ajuda: Texto explicativo de tooltip (help).
     """
     if valor is None:
         val_str = "—"
     elif formato == "moeda":
         val_str = format_currency(valor)
+    elif formato == "moeda_compacta":
+        val_str = format_currency(valor, compact=True)
     elif formato == "percentual":
         val_str = format_percent(valor)
     else:

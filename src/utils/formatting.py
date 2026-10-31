@@ -5,11 +5,22 @@ from typing import Optional, Union
 Numeric = Union[int, float]
 
 
-def format_currency(val: Optional[Numeric], decimal_places: int = 2) -> str:
-    """Formata número para moeda Real Brasileira (R$). Ex: 1234.5 -> 'R$ 1.234,50'."""
+def format_currency(val: Optional[Numeric], decimal_places: int = 2, compact: bool = False) -> str:
+    """Formata número para moeda Real Brasileira (R$). Ex: 1234.5 -> 'R$ 1.234,50' ou 'R$ 1,23 B'."""
     if val is None:
         return "N/A"
     try:
+        if compact:
+            abs_val = abs(val)
+            if abs_val >= 1e12:
+                formatted = f"{val / 1e12:,.{decimal_places}f}".replace(",", "X").replace(".", ",").replace("X", ".")
+                return f"R$ {formatted} T"
+            if abs_val >= 1e9:
+                formatted = f"{val / 1e9:,.{decimal_places}f}".replace(",", "X").replace(".", ",").replace("X", ".")
+                return f"R$ {formatted} B"
+            if abs_val >= 1e6:
+                formatted = f"{val / 1e6:,.{decimal_places}f}".replace(",", "X").replace(".", ",").replace("X", ".")
+                return f"R$ {formatted} M"
         formatted = f"{val:,.{decimal_places}f}"
         formatted = formatted.replace(",", "X").replace(".", ",").replace("X", ".")
         return f"R$ {formatted}"

@@ -344,6 +344,13 @@ A análise da base macroeconômica consolidada (2019–2023) revelou as seguinte
 * **Comportamento do Câmbio (PTAX):** O dólar PTAX registrou média de **R$ 5,16** no período filtrado, com janelas de valorização acentuada durante o biênio 2020–2021.
 * **Atividade Econômica vs. Política Monetária:** O indicador dessazonalizado do IBC-Br manteve tendência de recuperação pós-2020 mesmo durante o ciclo de aperto monetário iniciado em março de 2021.
 
+Na análise fundamentalista e Contábil (CVM) foram observados os seguintes dados:
+
+- **Receita Líquida Consolidada (Industriais):** No exercício de 2023, o universo industrial registrou R$ 744,38 B em Receita Líquida, uma expansão de +20,00% em relação a 2022 em base comparável.
+- **Lucro Líquido Consolidado:** O lucro total consolidado (incluindo instituições financeiras) atingiu R$ 122,21 B em 2023.
+- **Rentabilidade da Carteira:** O ROE médio das companhias situou-se em 19,00% em 2023, impulsionado por empresas líderes dos setores de Materiais Básicos e Indústria.
+- **Solvência e Liquidez:** Companhias como PETR4, KLBN11, EGIE3, VALE3 e JBSS3 apresentaram Liquidez Corrente inferior ao limiar de segurança de 1,5x conjugado com Dívida Líquida positiva no exercício foco.
+
 ---
 
 ## 8. Discussão e Limitações da Análise
@@ -362,6 +369,18 @@ A análise da base macroeconômica consolidada (2019–2023) revelou as seguinte
 - **Taxas de Juros (Meta vs. Efetiva):** A Selic Meta reflete as metas estabelecidas pelo COPOM, enquanto a Selic Efetiva (SGS 1178) representa as operações ponderadas over do mercado.
 
 - **Ausência de Causalidade:** Associação estatística e coeficientes de correlação não implicam relação de causalidade direta ou imediata entre as variáveis analisadas.
+
+- **Janela de Dados:** Análise restrita ao período de 2019 a 2023 (3 a 5 exercícios anuais por empresa).
+
+- **Valores Nominais:** As demonstrações contábeis CVM são apresentadas em valores nominais sem ajuste inflacionário por IPCA.
+
+- **Tratamento de Instituições Financeiras:** Bancos utilizam a Receita de Intermediação Financeira (não comparável à Receita Líquida industrial) e são excluídos dos cálculos de Liquidez Corrente, Margem EBIT e Dívida Líquida.
+
+- **Reapresentações Contábeis:** Foram consideradas as versões finais de reapresentação das DFP divulgadas pelas companhias à CVM.
+
+- **Amostra Setorial ($n$ reduzido):** Setores com poucas empresas listadas apresentam maior sensibilidade em boxplots e métricas agregadas.
+
+- **Classificações Próprias:** O enquadramento em setores analíticos e o indicador `exportadora_commodities` seguem critérios definidos na arquitetura do projeto.
 
 ### 8.1. Limitações Conhecidas e Observações das Extrações (Camada Bronze)
 
@@ -420,6 +439,22 @@ O Dashboard 1 apresenta a visão consolidada das variáveis macroeconômicas bra
 * **Dados & Metodologia:** Tabela da base mensal processada e nota técnica sobre a Equação de Fisher.
 
 *(Prints da aplicação salvos em `docs/img/`)*
+
+### 10.3. Dashboard 2 — Análise Fundamentalista & Contábil (CVM)
+
+O Dashboard 2 apresenta uma estrutura em 4 abas para navegação executiva:
+
+1. **Visão Geral:** KPIs de Receita, Lucro, ROE e Liquidez com delta anual compactos (B/T), visualização separada da Evolução da Receita por tipo de plano contábil (Industriais vs. Financeiras) e Donut de participação setorial.
+   ![Visão Geral CVM](docs/img/cvm_visao_geral.png)
+
+2. **Rentabilidade:** Matriz Scatter de Margem Líquida vs. ROE em quadrantes, evolução temporal de margem e subplots dinâmicos de Boxplot EBIT por setor/grupo com escalas Y independentes.
+   ![Rentabilidade CVM](docs/img/cvm_rentabilidade.png)
+
+3. **Solvência:** Gráfico duplo (Dívida Líquida vs. Liquidez Corrente) com limiar de liquidez ajustável no filtro topo e tabela dinâmica de atenção à solvência.
+   ![Solvência CVM](docs/img/cvm_solvencia.png)
+
+4. **Dados & Metodologia:** Tabelas de demonstrativos processados segregadas por empresas industriais e instituições financeiras (sem colunas irrelevantes), alertas de qualidade e notas metodológicas CVM.
+   ![Dados e Metodologia CVM](docs/img/cvm_dados.png)
 
 ---
 

@@ -216,7 +216,7 @@ def crescimento_receita(
     painel: pd.DataFrame, ano_ini: int, ano_fim: int
 ) -> Dict[str, Any]:
     """Calcula variação total, CAGR e agrupamentos por setor entre dois anos."""
-    if painel.empty:
+    if painel.empty or ano_ini >= ano_fim:
         return {"empresas": pd.DataFrame(), "setores": pd.DataFrame(), "contracoes": []}
 
     df_sub = painel[

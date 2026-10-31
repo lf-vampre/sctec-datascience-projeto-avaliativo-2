@@ -25,105 +25,78 @@ def _formatar_bilhoes_ou_milhoes(val: float) -> str:
 
 
 def _aplicar_layout_padrao(fig: go.Figure, titulo: str = "") -> go.Figure:
-    """Aplica o template do projeto, título e posição de legenda padronizada."""
+    """Aplica o template do projeto, título e posição de legenda padronizada (centralizada na parte inferior)."""
     fig = aplicar_template(fig)
     fig.update_layout(
         title=titulo,
-        margin=dict(t=90, l=48, r=24, b=48),
+        margin=dict(t=60, l=48, r=24, b=80),
         legend=dict(
             orientation="h",
-            yanchor="bottom",
-            y=1.12,
-            xanchor="right",
-            x=1.0,
+            yanchor="top",
+            y=-0.22,
+            xanchor="center",
+            x=0.5,
         ),
     )
     return fig
 
 
-def fig_receita_agrupada(painel: pd.DataFrame) -> go.Figure:
-    """Barras agrupadas de receita por empresa e ano com tratamento de bancos (ADR-09)."""
+def fig_receita_agrupada(painel: pd.DataFrame) -> Tuple[go.Figure, Optional[go.Figure]]:
+    """Gera dois gráficos independentes de barras agrupadas: Industriais e Financeiras (ADR-09)."""
     if painel.empty:
-        return figura_vazia("Sem dados para exibição da Receita Líquida")
+        return figura_vazia("Sem dados para exibição da Receita Líquida"), None
 
     df = painel.copy()
     has_ind = (df["comparavel_receita"] & df["RECEITA_LIQUIDA"].notna()).any()
     has_fin = (~df["comparavel_receita"] & df["RECEITA_INTERMEDIACAO"].notna()).any()
 
     if not has_ind and not has_fin:
-        return figura_vazia("Sem dados de receita para o filtro selecionado")
+        return figura_vazia("Sem dados de receita para o filtro selecionado"), None
 
-    # Se houver bancos e industriais, usa subplots com eixos Y independentes
-    if has_ind and has_fin:
-        fig = make_subplots(
-            rows=2,
-            cols=1,
-            shared_xaxes=True,
-            vertical_spacing=0.15,
-            subplot_titles=(
-                "Receita Líquida (Empresas Industriais/Comerciais - R$)",
-                "Receita de Intermediação Financeira (Instituições Financeiras - Não Comparável)",
-            ),
+    fig_ind, fig_fin = None, None
+
+    if has_ind:
+        sub_ind = df[df["comparavel_receita"] & df["RECEITA_LIQUIDA"].notna()].copy()
+        sub_ind["ano_str"] = sub_ind["ano"].astype(str)
+        sub_ind["receita_fmt"] = sub_ind["RECEITA_LIQUIDA"].apply(_formatar_bilhoes_ou_milhoes)
+        fig_ind = px.bar(
+            sub_ind,
+            x="ticker",
+            y="RECEITA_LIQUIDA",
+            color="ano_str",
+            barmode="group",
+            custom_data=["receita_fmt"],
+            title="Receita Líquida (Industriais / Comerciais)",
+            labels={"ticker": "Empresa", "RECEITA_LIQUIDA": "Receita Líquida (R$)", "ano_str": "Ano"},
         )
+        fig_ind.update_traces(
+            hovertemplate="<b>%{x}</b> (%{fullData.name})<br>Receita Líquida: %{customdata[0]}<extra></extra>"
+        )
+        fig_ind = _aplicar_layout_padrao(fig_ind, "Receita Líquida — Industriais / Comerciais")
 
-        df_ind = df[df["comparavel_receita"] & df["RECEITA_LIQUIDA"].notna()]
-        df_fin = df[~df["comparavel_receita"] & df["RECEITA_INTERMEDIACAO"].notna()]
+    if has_fin:
+        sub_fin = df[~df["comparavel_receita"] & df["RECEITA_INTERMEDIACAO"].notna()].copy()
+        sub_fin["ano_str"] = sub_fin["ano"].astype(str)
+        sub_fin["receita_fmt"] = sub_fin["RECEITA_INTERMEDIACAO"].apply(_formatar_bilhoes_ou_milhoes)
+        fig_fin = px.bar(
+            sub_fin,
+            x="ticker",
+            y="RECEITA_INTERMEDIACAO",
+            color="ano_str",
+            barmode="group",
+            custom_data=["receita_fmt"],
+            title="Receita de Intermediação Financeira (Instituições Financeiras)",
+            labels={"ticker": "Empresa", "RECEITA_INTERMEDIACAO": "Receita Intermediação (R$)", "ano_str": "Ano"},
+        )
+        fig_fin.update_traces(
+            hovertemplate="<b>%{x}</b> (%{fullData.name})<br>Receita Intermediação: %{customdata[0]}<extra></extra>"
+        )
+        fig_fin = _aplicar_layout_padrao(fig_fin, "Receita Intermediação — Financeiras (Não Comparável)")
 
-        anos = sorted(df["ano"].unique())
-        paleta = theme.COLOR_TOKENS.categorical_sequence
+    if fig_ind is None:
+        return fig_fin, None
 
-        for i, ano in enumerate(anos):
-            sub_ind = df_ind[df_ind["ano"] == ano]
-            sub_fin = df_fin[df_fin["ano"] == ano]
-            cor = paleta[i % len(paleta)]
-
-            if not sub_ind.empty:
-                fig.add_trace(
-                    go.Bar(
-                        x=sub_ind["ticker"],
-                        y=sub_ind["RECEITA_LIQUIDA"],
-                        name=str(ano),
-                        marker_color=cor,
-                        hovertemplate="<b>%{x}</b> (%{fullData.name})<br>Receita Líquida: %{customdata}<extra></extra>",
-                        customdata=[_formatar_bilhoes_ou_milhoes(v) for v in sub_ind["RECEITA_LIQUIDA"]],
-                    ),
-                    row=1,
-                    col=1,
-                )
-
-            if not sub_fin.empty:
-                fig.add_trace(
-                    go.Bar(
-                        x=sub_fin["ticker"],
-                        y=sub_fin["RECEITA_INTERMEDIACAO"],
-                        name=str(ano),
-                        marker_color=cor,
-                        showlegend=False,
-                        hovertemplate="<b>%{x}</b> (%{fullData.name})<br>Receita Intermediação: %{customdata}<extra></extra>",
-                        customdata=[_formatar_bilhoes_ou_milhoes(v) for v in sub_fin["RECEITA_INTERMEDIACAO"]],
-                    ),
-                    row=2,
-                    col=1,
-                )
-
-        fig.update_layout(barmode="group")
-        return _aplicar_layout_padrao(fig, "Evolução da Receita por Companhia (2019-2023)")
-
-    # Apenas Industriais ou apenas Financeiras
-    val_col = "RECEITA_LIQUIDA" if has_ind else "RECEITA_INTERMEDIACAO"
-    sub_df = df[df[val_col].notna()].copy()
-    sub_df["ano_str"] = sub_df["ano"].astype(str)
-
-    fig = px.bar(
-        sub_df,
-        x="ticker",
-        y=val_col,
-        color="ano_str",
-        barmode="group",
-        title="Evolução da Receita por Companhia",
-        labels={"ticker": "Empresa", val_col: "Receita (R$)", "ano_str": "Ano"},
-    )
-    return _aplicar_layout_padrao(fig, "Evolução da Receita por Companhia")
+    return fig_ind, fig_fin
 
 
 def fig_donut_setorial(dist_setorial: Dict) -> go.Figure:
@@ -176,8 +149,7 @@ def fig_margem_roe(dispersao: Dict, medianas: Optional[Tuple[float, float]] = No
 
     fig.update_traces(
         textposition="top center",
-        hovertemplate="<b>%{text}</b><br>Margem Líquida: %{x:.2f}%<br>ROE: %{y:.2f}%<br>Quadrante: %{customdata[0]}<extra></extra>",
-        customdata=df_plot[["quadrante"]],
+        hovertemplate="<b>%{text}</b><br>Margem Líquida: %{x:.2f}%<br>ROE: %{y:.2f}%<br>Quadrante: %{fullData.name}<extra></extra>",
     )
 
     if med_m is not None:
@@ -189,27 +161,51 @@ def fig_margem_roe(dispersao: Dict, medianas: Optional[Tuple[float, float]] = No
 
 
 def fig_boxplot_ebit(distribuicao: pd.DataFrame) -> go.Figure:
-    """Boxplot da Margem EBIT por Setor ou Grupo de Commodities."""
+    """Boxplot da Margem EBIT com subplots dinâmicos por Grupo/Setor (escalas Y independentes)."""
     if distribuicao.empty or "grupo" not in distribuicao.columns:
         return figura_vazia("Sem dados suficientes de Margem EBIT para a distribuição")
 
-    counts = distribuicao.groupby("grupo")["MARGEM_EBIT"].count().to_dict()
-    df_plot = distribuicao.copy()
-    df_plot["grupo_rotulo"] = df_plot["grupo"].map(lambda g: f"{g} (n={counts.get(g, 0)})")
+    df_plot = distribuicao.dropna(subset=["MARGEM_EBIT"]).copy()
+    if df_plot.empty:
+        return figura_vazia("Sem observações válidas de Margem EBIT")
 
-    fig = px.box(
-        df_plot,
-        x="grupo_rotulo",
-        y="MARGEM_EBIT",
-        points="all",
-        title="Distribuição da Margem EBIT por Setor / Grupo",
-        labels={"grupo_rotulo": "Grupo / Setor", "MARGEM_EBIT": "Margem EBIT (%)"},
+    grupos = sorted(df_plot["grupo"].unique())
+    n_grupos = len(grupos)
+
+    titulos_subplots = [
+        f"{g} (n={len(df_plot[df_plot['grupo'] == g])})" for g in grupos
+    ]
+
+    fig = make_subplots(
+        rows=1,
+        cols=n_grupos,
+        subplot_titles=titulos_subplots,
+        shared_yaxes=False,
     )
 
-    fig.update_traces(
-        hovertemplate="<b>%{customdata}</b> (%{x})<br>Margem EBIT: %{y:.2f}%<extra></extra>",
-        customdata=df_plot["ticker"],
-    )
+    paleta = theme.COLOR_TOKENS.categorical_sequence
+
+    for i, g in enumerate(grupos):
+        sub = df_plot[df_plot["grupo"] == g]
+        cor = paleta[i % len(paleta)]
+
+        fig.add_trace(
+            go.Box(
+                y=sub["MARGEM_EBIT"],
+                name=g,
+                boxpoints="all",
+                jitter=0.3,
+                pointpos=-1.8,
+                marker=dict(color=cor),
+                line=dict(color=cor),
+                customdata=sub["ticker"],
+                hovertemplate="<b>%{customdata}</b><br>Margem EBIT: %{y:.2f}%<extra></extra>",
+                showlegend=False,
+            ),
+            row=1,
+            col=i + 1,
+        )
+        fig.update_yaxes(title_text="Margem EBIT (%)", row=1, col=i + 1)
 
     return _aplicar_layout_padrao(fig, "Distribuição da Margem EBIT por Grupo")
 
@@ -225,7 +221,7 @@ def fig_solvencia(solvencia_df: pd.DataFrame, limiar_liquidez: float = 1.5) -> g
 
     # Cores de atenção para Dívida Líquida / Liquidez
     cores_div = [
-        theme.COLOR_TOKENS.error if row["atencao_liquidez"] else theme.COLOR_TOKENS.primary
+        theme.COLOR_TOKENS.negative if row["atencao_liquidez"] else theme.COLOR_TOKENS.primary
         for _, row in df.iterrows()
     ]
 
