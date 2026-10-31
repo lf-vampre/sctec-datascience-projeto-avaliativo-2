@@ -198,9 +198,11 @@ def kpis_mercado(tabela_rr: pd.DataFrame, pivot_close: pd.DataFrame) -> Dict[str
     destaque_row = tab_act.sort_values("retorno_acumulado", ascending=False).iloc[0] if not tab_act.empty else None
     pior_row = tab_act.sort_values("retorno_acumulado", ascending=True).iloc[0] if not tab_act.empty else None
 
-    # Cálculo do Delta (Ano Atual vs. Ano Anterior se janela >= 2 anos)
+    # Cálculo do Delta do Retorno Acumulado (Fim do último ano vs. Fim do ano anterior)
     delta_ret_pp = None
     delta_vol_pp = None
+    destaque_delta_pp = None
+    pior_delta_pp = None
 
     if not pivot_close.empty and isinstance(pivot_close.index, pd.DatetimeIndex):
         anos = sorted(pivot_close.index.year.unique())
@@ -210,10 +212,26 @@ def kpis_mercado(tabela_rr: pd.DataFrame, pivot_close: pd.DataFrame) -> Dict[str
             close_ant = pivot_close[pivot_close.index.year == ano_ant]
 
             if not close_fim.empty and not close_ant.empty:
-                ret_fim = (close_fim.iloc[-1] / close_fim.iloc[0]) - 1.0
-                ret_ant = (close_ant.iloc[-1] / close_ant.iloc[0]) - 1.0
-                delta_ret_pp = float((ret_fim.mean() - ret_ant.mean()) * 100.0)
+                base_init = pivot_close.iloc[0]
 
+                # Retorno acumulado no final de ano_fim e ano_ant a partir do início da janela
+                ret_acum_fim_ativos = (close_fim.iloc[-1] / base_init) - 1.0
+                ret_acum_ant_ativos = (close_ant.iloc[-1] / base_init) - 1.0
+
+                # Delta da carteira equiponderada (variação do retorno acumulado em p.p.)
+                delta_ret_pp = float((ret_acum_fim_ativos.mean() - ret_acum_ant_ativos.mean()) * 100.0)
+
+                # Delta individual do ativo destaque
+                if destaque_row is not None and destaque_row["ticker"] in pivot_close.columns:
+                    t_d = destaque_row["ticker"]
+                    destaque_delta_pp = float((ret_acum_fim_ativos[t_d] - ret_acum_ant_ativos[t_d]) * 100.0)
+
+                # Delta individual do ativo de menor performance
+                if pior_row is not None and pior_row["ticker"] in pivot_close.columns:
+                    t_p = pior_row["ticker"]
+                    pior_delta_pp = float((ret_acum_fim_ativos[t_p] - ret_acum_ant_ativos[t_p]) * 100.0)
+
+                # Delta da volatilidade anualizada média
                 vol_fim = close_fim.pct_change(fill_method=None).std() * np.sqrt(252)
                 vol_ant = close_ant.pct_change(fill_method=None).std() * np.sqrt(252)
                 delta_vol_pp = float((vol_fim.mean() - vol_ant.mean()) * 100.0)
@@ -223,8 +241,10 @@ def kpis_mercado(tabela_rr: pd.DataFrame, pivot_close: pd.DataFrame) -> Dict[str
         "retorno_delta_pp": delta_ret_pp,
         "ativo_destaque": destaque_row["ticker"] if destaque_row is not None else "N/A",
         "ativo_destaque_retorno": float(destaque_row["retorno_acumulado"]) if destaque_row is not None else None,
+        "ativo_destaque_delta_pp": destaque_delta_pp,
         "ativo_pior": pior_row["ticker"] if pior_row is not None else "N/A",
         "ativo_pior_retorno": float(pior_row["retorno_acumulado"]) if pior_row is not None else None,
+        "ativo_pior_delta_pp": pior_delta_pp,
         "volatilidade_media": vol_med,
         "volatilidade_delta_pp": delta_vol_pp,
     }
