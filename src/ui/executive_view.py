@@ -7,11 +7,11 @@ from src.config.settings import (
 )
 from src.config.universe import COMPANIES
 from src.models.contracts import Filtros
-from src.ui.dashboards import macro_dashboard
+from src.ui.dashboards import cvm_dashboard, macro_dashboard
 
 
 def render() -> None:
-    """Renderiza a view do BI Executivo chamando o Dashboard Macro com filtros padrão."""
+    """Renderiza a view do BI Executivo permitindo alternar entre Dashboard Macro e CVM."""
     setores = tuple(sorted(list({info.setor_analitico for info in COMPANIES.values()})))
 
     filtros_padrao = Filtros(
@@ -21,4 +21,13 @@ def render() -> None:
         indicadores_bacen=tuple(BACEN_SERIES.keys()),
     )
 
-    macro_dashboard.render(filtros_padrao)
+    dash_opcao = st.sidebar.radio(
+        "Selecione o Dashboard",
+        options=["Dashboard 1 — Macro (BACEN)", "Dashboard 2 — Fundamentalista (CVM)"],
+        index=0,
+    )
+
+    if dash_opcao == "Dashboard 1 — Macro (BACEN)":
+        macro_dashboard.render(filtros_padrao)
+    else:
+        cvm_dashboard.render(filtros_padrao)
