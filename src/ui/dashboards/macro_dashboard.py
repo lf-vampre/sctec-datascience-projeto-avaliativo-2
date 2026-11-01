@@ -86,7 +86,7 @@ def render(filtros: Filtros) -> None:
 
     # Painel colapsavel de filtros
     indicadores_disp = [c for c in painel.columns if painel[c].notna().any()]
-    with st.expander("🔍 Exibir filtros disponíveis", expanded=False):
+    with st.expander("🔍 Exibir filtros Locais disponíveis. Filtros Globais, acesse o sidebar!", expanded=False):
         col_f1, col_f2, col_f3 = st.columns(3)
         with col_f1:
             defasagem_k = st.slider("Defasagem Câmbio x Inflação (meses)", 0, 12, 0)

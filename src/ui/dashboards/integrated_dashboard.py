@@ -92,7 +92,7 @@ def render(filtros: Filtros) -> None:
     ano_base_default = anos_disponiveis[0] if anos_disponiveis else int(ano_ini_str)
 
     # Painel de Filtros Locais
-    with st.expander("🔍 Exibir filtros disponíveis", expanded=False):
+    with st.expander("🔍 Exibir filtros Locais disponíveis. Filtros Globais, acesse o sidebar!", expanded=False):
         col_f1, col_f2, col_f3 = st.columns(3)
         with col_f1:
             ano_foco = st.selectbox("Exercício Foco (KPIs & Contábil)", anos_disponiveis, index=len(anos_disponiveis) - 1)

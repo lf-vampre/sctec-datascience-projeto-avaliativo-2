@@ -3,6 +3,7 @@
 from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
+import streamlit as st
 
 from src.config.settings import (
     ESTRESSE_CAMBIAL_JANELA_DIAS,
@@ -104,7 +105,7 @@ def painel_macro_cambial(
     """Consolida os indicadores Selic Meta, IPCA 12M e PTAX no grão mensal."""
     return painel_mensal(fato_macro, dim_indicador)
 
-
+@st.cache_data(show_spinner=False)
 def retorno_setorial_vs_selic(
     fato_macro: pd.DataFrame,
     dim_indicador: pd.DataFrame,
@@ -606,6 +607,7 @@ def margem_ebit_exportadoras(
 # Pergunta 4 — Ranking Setorial 
 # ------------------------------------------------------------------------------
 
+@st.cache_data(show_spinner=False)
 def ranking_setorial(
     painel_cvm: pd.DataFrame,
     fato_cotacoes: pd.DataFrame,

@@ -3,8 +3,10 @@
 from typing import Any, Dict, List, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
+import streamlit as st
 
 
+@st.cache_data(show_spinner=False)
 def painel_anual(
     fato_demonstrativos: pd.DataFrame,
     dim_empresa: pd.DataFrame,

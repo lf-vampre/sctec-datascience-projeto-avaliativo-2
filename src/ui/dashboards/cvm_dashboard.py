@@ -78,7 +78,7 @@ def render(filtros: Filtros) -> None:
     ano_ini_default = anos_disponiveis[0] if anos_disponiveis else int(ano_ini_str)
 
     # Painel colapsável de filtros locais
-    with st.expander("🔍 Exibir filtros disponíveis", expanded=False):
+    with st.expander("🔍 Exibir filtros Locais disponíveis. Filtros Globais, acesse o sidebar!", expanded=False):
         col_f1, col_f2, col_f3 = st.columns(3)
         with col_f1:
             ano_foco = st.selectbox("Exercício Foco (KPIs & Dispersão)", anos_disponiveis, index=len(anos_disponiveis) - 1)

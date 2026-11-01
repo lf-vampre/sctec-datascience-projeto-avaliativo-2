@@ -3,6 +3,7 @@
 from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
+import streamlit as st
 
 
 def _preparar_fato_dim(
@@ -41,7 +42,7 @@ def serie_diaria(
     s = sub.set_index("dt")["valor"].astype(float)
     return s.sort_index()
 
-
+@st.cache_data(show_spinner=False)
 def painel_mensal(
     fato_macro: pd.DataFrame, dim_indicador: pd.DataFrame
 ) -> pd.DataFrame:

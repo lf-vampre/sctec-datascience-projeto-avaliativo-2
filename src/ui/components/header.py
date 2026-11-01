@@ -12,13 +12,7 @@ def header(
     subtitulo: Optional[str] = None,
     mostrar_botao_voltar: bool = False,
 ) -> None:
-    """Renderiza o cabeçalho padronizado da página com suporte a escape HTML.
-    
-    Args:
-        titulo: Título principal da página.
-        subtitulo: Subtítulo descritivo opcional.
-        mostrar_botao_voltar: Exibe botão para retornar à landing page.
-    """
+    """Renderiza o cabeçalho padronizado da página sem recuo markdown."""
     safe_titulo = html.escape(titulo)
     safe_subtitulo = html.escape(subtitulo) if subtitulo else None
 
@@ -29,12 +23,11 @@ def header(
 
     sub_html = f'<p class="fx-header-subtitle">{safe_subtitulo}</p>' if safe_subtitulo else ""
 
-    st.markdown(
-        f"""
-        <div class="fx-header-block" style="margin-top:-20px;">
-            <h1 class="fx-header-title">{safe_titulo}</h1>
-            {sub_html}
-        </div>
-        """,
-        unsafe_allow_html=True,
+    html_code = (
+        f'<div class="fx-header-block" style="margin-top:-20px;">'
+        f'<h1 class="fx-header-title">{safe_titulo}</h1>'
+        f'{sub_html}'
+        f'</div>'
     )
+
+    st.markdown(html_code, unsafe_allow_html=True)
