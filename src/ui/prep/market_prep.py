@@ -6,6 +6,7 @@ Módulo de funções puras em Pandas/NumPy (sem streamlit, sem I/O).
 from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
+import streamlit as st
 
 from src.config.settings import SERIE_RISCO_LIVRE
 from src.etl.warehouse.metrics_calculator import (
@@ -20,7 +21,7 @@ from src.etl.warehouse.metrics_calculator import (
     vol_anualizada,
 )
 
-
+@st.cache_data(show_spinner=False)
 def _preparar_pivots(
     fato_cotacoes: pd.DataFrame,
     dim_empresa: pd.DataFrame,
