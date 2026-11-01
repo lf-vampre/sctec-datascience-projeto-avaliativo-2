@@ -97,3 +97,11 @@ RANKING_PESOS_DEFAULT: Dict[str, float] = {
     "resiliencia_macro": 1.0,
     "solidez_contabil": 1.0,
 }
+
+# ------------------------------------------------------------------------------
+# Parâmetros da EDA / DataProfiler
+# ------------------------------------------------------------------------------
+EDA_MIN_OBSERVATIONS: int = 10
+EDA_OUTLIER_IQR_FACTOR: float = 1.5
+EDA_OUTLIER_MAD_THRESHOLD: float = 3.5
+EDA_B3_EXTREME_RETURN_THRESHOLD: float = 0.15
