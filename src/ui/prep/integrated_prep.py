@@ -356,7 +356,11 @@ def efeito_aperto(
     if df_ind.empty:
         return df_vazio, ["Nenhuma empresa industrial encontrada no painel CVM."]
 
-    col_desp = "DESPESAS_FINANCEIRAS" if "DESPESAS_FINANCEIRAS" in df_ind.columns else "DESPESA_FINANCEIRA"
+    col_desp = (
+        "DESP_FINANCEIRAS"
+        if "DESP_FINANCEIRAS" in df_ind.columns
+        else ("DESPESAS_FINANCEIRAS" if "DESPESAS_FINANCEIRAS" in df_ind.columns else "DESPESA_FINANCEIRA")
+    )
     if col_desp not in df_ind.columns:
         df_ind[col_desp] = np.nan
 
@@ -723,17 +727,18 @@ def ranking_setorial(
         if clean.empty or clean.max() == clean.min():
             return pd.Series(50.0, index=series.index)
         if ascending:
-            return ((series - clean.min()) / (clean.max() - clean.min())) * 100.0
+            res = ((series - clean.min()) / (clean.max() - clean.min())) * 100.0
         else:
-            return ((clean.max() - series) / (clean.max() - clean.min())) * 100.0
+            res = ((clean.max() - series) / (clean.max() - clean.min())) * 100.0
+        return res.fillna(50.0)
 
     df_raw["score_ret_bolsa"] = _scale_col(df_raw["retorno_bolsa_raw"])
     df_raw["score_sharpe"] = _scale_col(df_raw["sharpe_raw"])
-    df_raw["pilar_bolsa_score"] = df_raw[["score_ret_bolsa", "score_sharpe"]].mean(axis=1)
+    df_raw["pilar_bolsa_score"] = df_raw[["score_ret_bolsa", "score_sharpe"]].mean(axis=1).fillna(50.0)
 
     df_raw["score_drawdown"] = _scale_col(df_raw["drawdown_raw"], ascending=True)
     df_raw["score_estresse"] = _scale_col(df_raw["ret_estresse_raw"])
-    df_raw["pilar_resiliencia_score"] = df_raw[["score_drawdown", "score_estresse"]].mean(axis=1)
+    df_raw["pilar_resiliencia_score"] = df_raw[["score_drawdown", "score_estresse"]].mean(axis=1).fillna(50.0)
 
     df_raw["score_roe"] = _scale_col(df_raw["roe_raw"])
     df_raw["score_ebit"] = _scale_col(df_raw["ebit_raw"])
@@ -742,11 +747,12 @@ def ranking_setorial(
     solidez_scores = []
     for _, row in df_raw.iterrows():
         if row["is_financeiro"]:
-            solidez_scores.append(row["score_roe"])
+            val = row["score_roe"]
+            solidez_scores.append(val if pd.notna(val) else 50.0)
         else:
             vals = [row["score_roe"], row["score_ebit"], row["score_liq"]]
             valid_vals = [v for v in vals if pd.notna(v)]
-            solidez_scores.append(np.mean(valid_vals) if valid_vals else 50.0)
+            solidez_scores.append(float(np.mean(valid_vals)) if valid_vals else 50.0)
     df_raw["pilar_solidez_score"] = solidez_scores
 
     # Score Final Ponderado
@@ -756,9 +762,9 @@ def ranking_setorial(
     w_tot = w_b + w_r + w_s
 
     df_raw["score_final"] = (
-        (df_raw["pilar_bolsa_score"] * w_b)
-        + (df_raw["pilar_resiliencia_score"] * w_r)
-        + (df_raw["pilar_solidez_score"] * w_s)
+        (df_raw["pilar_bolsa_score"].fillna(50.0) * w_b)
+        + (df_raw["pilar_resiliencia_score"].fillna(50.0) * w_r)
+        + (df_raw["pilar_solidez_score"].fillna(50.0) * w_s)
     ) / (w_tot if w_tot > 0 else 1.0)
 
     df_raw["flag_parcial"] = df_raw["is_financeiro"]

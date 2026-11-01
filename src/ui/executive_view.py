@@ -7,11 +7,16 @@ from src.config.settings import (
 )
 from src.config.universe import COMPANIES
 from src.models.contracts import Filtros
-from src.ui.dashboards import b3_dashboard, cvm_dashboard, macro_dashboard
+from src.ui.dashboards import (
+    b3_dashboard,
+    cvm_dashboard,
+    integrated_dashboard,
+    macro_dashboard,
+)
 
 
 def render() -> None:
-    """Renderiza a view do BI Executivo permitindo alternar entre os Dashboards Macro, CVM e B3."""
+    """Renderiza a view do BI Executivo permitindo alternar entre os Dashboards Macro, CVM, B3 e Integrado."""
     setores = tuple(sorted(list({info.setor_analitico for info in COMPANIES.values()})))
 
     filtros_padrao = Filtros(
@@ -27,6 +32,7 @@ def render() -> None:
             "Dashboard 1 — Macro (BACEN)",
             "Dashboard 2 — Fundamentalista (CVM)",
             "Dashboard 3 — Mercado e Risco (B3)",
+            "Dashboard 4 — Visão Integrada (Tríade)",
         ],
         index=0,
     )
@@ -35,5 +41,7 @@ def render() -> None:
         macro_dashboard.render(filtros_padrao)
     elif dash_opcao == "Dashboard 2 — Fundamentalista (CVM)":
         cvm_dashboard.render(filtros_padrao)
-    else:
+    elif dash_opcao == "Dashboard 3 — Mercado e Risco (B3)":
         b3_dashboard.render(filtros_padrao)
+    else:
+        integrated_dashboard.render(filtros_padrao)

@@ -351,8 +351,8 @@ def fig_efeito_aperto(tabela_aperto: pd.DataFrame) -> go.Figure:
                 x=anos_str,
                 y=tabela_aperto["selic_media_anual"],
                 name="Selic Média Anual (% a.a.)",
-                marker_color=cor.surface_alt,
-                opacity=0.4,
+                marker_color=cor.info,
+                opacity=0.6,
                 hovertemplate="<b>Selic Média:</b> %{y:.2f}% a.a.<br>Ano: %{x}<extra></extra>",
             ),
             secondary_y=True,
@@ -509,20 +509,45 @@ def fig_ranking_setorial(df_ranking: pd.DataFrame) -> go.Figure:
         )
     )
 
-    # Anotação para setores com solidez parcial (Financeiro)
+    # Score Final Consolidado (Média Ponderada)
+    fig.add_trace(
+        go.Bar(
+            y=df_sorted["setor_analitico"],
+            x=df_sorted["score_final"],
+            name="Score Final Consolidado",
+            orientation="h",
+            marker_color=cor.negative,
+            hovertemplate="<b>%{y}</b><br>Score Final Consolidado: %{x:.1f} pts<extra></extra>",
+        )
+    )
+
+    # Anotação para setores com solidez parcial (Financeiro) posicionada fora da área de barras (x=102)
     for _, row in df_sorted.iterrows():
         if row.get("flag_parcial", False):
             fig.add_annotation(
                 y=row["setor_analitico"],
-                x=row["score_final"],
+                x=102,
                 text="*Solidez Parcial",
                 showarrow=False,
-                xshift=50,
+                xanchor="left",
                 font=dict(size=10, color=cor.text_muted),
             )
 
     fig.update_layout(barmode="group")
-    fig.update_xaxes(title_text="Pontuação por Pilar (0 - 100)")
+    fig.update_xaxes(title_text="Pontuação por Pilar (0 - 100)", range=[0, 110], zeroline=True, zerolinecolor=cor.border_strong)
     fig.update_yaxes(title_text="Setor Econômico")
 
-    return _aplicar_layout_padrao(fig, "Ranking Setorial Multidimensional (Bolsa, Resiliência e Solidez)")
+    #return _aplicar_layout_padrao(fig, "Ranking Setorial Multidimensional (Bolsa, Resiliência e Solidez)")
+    fig = aplicar_template(fig)
+    fig.update_layout(
+        title="Ranking Setorial Multidimensional (Bolsa, Resiliência e Solidez)",
+        margin=dict(t=60, l=48, r=24, b=80),
+        legend=dict(
+            orientation="h",
+            yanchor="top",
+            y=-0.19,
+            xanchor="center",
+            x=0.5,
+        ),
+    )
+    return fig
