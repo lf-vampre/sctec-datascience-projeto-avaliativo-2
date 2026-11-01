@@ -7,17 +7,16 @@ Sem leitura de dados ou I/O neste módulo.
 from __future__ import annotations
 
 import gc
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional
 import streamlit as st
 
 from src.config.settings import (
     BACEN_SERIES,
-    DEFAULT_CVM_END_YEAR,
-    DEFAULT_CVM_START_YEAR,
+    DEFAULT_BACEN_END_DATE,
+    DEFAULT_BACEN_START_DATE,
 )
 from src.config.universe import COMPANIES
-#from src.etl.pipeline import PipelineOrchestrator
-from src.models.contracts import PipelineParams
+from src.models.contracts import Filtros, PipelineParams
 
 if TYPE_CHECKING:
     from src.etl.pipeline import PipelineOrchestrator
@@ -27,7 +26,7 @@ def get_default_filtros() -> Dict[str, Any]:
     """Retorna o dicionário de filtros globais com os valores padrão de config."""
     setores = sorted(list({info.setor_analitico for info in COMPANIES.values()}))
     return {
-        "periodo": (DEFAULT_CVM_START_YEAR, DEFAULT_CVM_END_YEAR),
+        "periodo": (DEFAULT_BACEN_START_DATE, DEFAULT_BACEN_END_DATE),
         "tickers": list(COMPANIES.keys()),
         "setores": setores,
         "indicadores_bacen": list(BACEN_SERIES.keys()),
@@ -64,7 +63,7 @@ def init_state() -> None:
         st.session_state["dataops_resultados"] = {}
 
     if "dataops_finalizado" not in st.session_state:
-        st.session_state["dataops_finalizado"] = False    
+        st.session_state["dataops_finalizado"] = False
 
 
 def ir_para(modo: str, aba: str = "d1_macro") -> None:
@@ -81,6 +80,25 @@ def voltar_landing() -> None:
 def reset_filtros() -> None:
     """Restaura os filtros globais para os valores padrão das configurações."""
     st.session_state["filtros"] = get_default_filtros()
+
+
+def montar_filtros() -> Filtros:
+    """Converte o estado atual de st.session_state["filtros"] em dataclass imutável Filtros."""
+    if "filtros" not in st.session_state:
+        st.session_state["filtros"] = get_default_filtros()
+
+    f = st.session_state["filtros"]
+    periodo_tuple = tuple(f.get("periodo", (DEFAULT_BACEN_START_DATE, DEFAULT_BACEN_END_DATE)))
+    tickers_tuple = tuple(f.get("tickers", list(COMPANIES.keys())))
+    setores_tuple = tuple(f.get("setores", []))
+    indicadores_tuple = tuple(f.get("indicadores_bacen", list(BACEN_SERIES.keys())))
+
+    return Filtros(
+        periodo=periodo_tuple,
+        tickers=tickers_tuple,
+        setores=setores_tuple,
+        indicadores_bacen=indicadores_tuple,
+    )
 
 
 def get_dataops_params() -> Optional[PipelineParams]:
