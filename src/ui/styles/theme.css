@@ -9,6 +9,11 @@
   padding: var(--fx-space-md);
   box-shadow: var(--fx-shadow-sm);
   margin-bottom: var(--fx-space-md);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fx-card:hover {
+  border-color: var(--fx-color-secondary);
 }
 
 .fx-hero {
@@ -42,6 +47,7 @@
   font-family: var(--fx-font-family);
   font-size: var(--fx-font-size-xs);
   font-weight: 600;
+  line-height: 1.2;
 }
 
 .fx-badge-info {
@@ -71,6 +77,14 @@
   margin-bottom: var(--fx-space-sm);
 }
 
+.fx-header-title {
+  color: var(--fx-color-text-primary);
+  font-family: var(--fx-font-family);
+  font-size: var(--fx-font-size-3xl);
+  font-weight: 600;
+  margin-bottom: var(--fx-space-xs);
+}
+
 .fx-alert {
   padding: var(--fx-space-md);
   border-radius: var(--fx-radius-md);
@@ -93,7 +107,7 @@
 }
 
 /* ==========================================================================
-   seletores internos (Overrides e acabamento dos elementos nativos Streamlit)
+   Seletores internos (Overrides e acabamento dos elementos nativos Streamlit)
    ========================================================================== */
 
 /* Sidebar */
@@ -116,16 +130,19 @@
   border: 1px solid var(--fx-color-border);
   border-radius: var(--fx-radius-md);
   padding: var(--fx-space-md);
+  box-shadow: var(--fx-shadow-sm);
 }
 
 [data-testid="stMetricLabel"] {
   color: var(--fx-color-text-secondary) !important;
   font-size: var(--fx-font-size-sm) !important;
+  font-weight: 500;
 }
 
 [data-testid="stMetricValue"] {
   color: var(--fx-color-text-primary) !important;
   font-size: var(--fx-font-size-2xl) !important;
+  font-weight: 700;
 }
 
 /* Abas st.tabs */
@@ -141,6 +158,7 @@
   font-size: var(--fx-font-size-sm);
   padding: var(--fx-space-sm) var(--fx-space-md);
   border-radius: var(--fx-radius-sm) var(--fx-radius-sm) 0 0;
+  transition: color 0.2s ease, border-color 0.2s ease;
 }
 
 [data-testid="stTabs"] [aria-selected="true"] {
@@ -176,4 +194,34 @@
 .stButton > button[kind="primary"]:hover {
   background-color: var(--fx-color-primary-hover);
   border-color: var(--fx-color-primary-hover);
+}
+
+/* Rótulos de todos os widgets */
+[data-testid="stWidgetLabel"] p {
+  font-size: var(--fx-font-size-xs) !important;
+}
+
+/* Tags de todos os multiselects */
+[data-baseweb="tag"] span {
+  font-size: 12px !important;
+}
+
+/* Texto de todos os seletores */
+[data-baseweb="select"] * {
+  font-size: 13px !important;
+}
+
+/* Rótulo do widget Radio Button */
+[data-testid="stRadio"] [data-testid="stWidgetLabel"] p {
+  font-size: var(--fx-font-size-xs) !important;
+}
+
+/* Texto das opções do Radio Button */
+[data-testid="stRadio"] label p {
+  font-size: 13px !important;
+}
+
+/* Tamanho da fonte dos botões na Sidebar */
+[data-testid="stSidebar"] [data-testid="stButton"] p {
+  font-size: var(--fx-font-size-xs) !important;
 }

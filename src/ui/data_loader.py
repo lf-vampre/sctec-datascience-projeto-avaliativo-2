@@ -17,6 +17,9 @@ from src.models.contracts import Filtros
 from src.utils import paths
 
 _TTL_STATUS_S = 60
+_MAX_ENTRIES_STATUS = 16
+_MAX_ENTRIES_GOLD = 128
+_MAX_ENTRIES_DIM = 32
 
 DIMENSOES: Tuple[str, ...] = ("dim_tempo", "dim_empresa", "dim_indicador")
 
@@ -88,7 +91,7 @@ def ultima_atualizacao(tabela: Optional[str] = None) -> Optional[datetime]:
     return max(datas) if datas else None
 
 
-@st.cache_data(ttl=_TTL_STATUS_S, show_spinner=False)
+@st.cache_data(ttl=_TTL_STATUS_S, max_entries=_MAX_ENTRIES_STATUS, show_spinner=False)
 def fonte_em_uso() -> str:
     """'neon' se a conexão responde; caso contrário 'parquet'."""
     try:
@@ -98,7 +101,7 @@ def fonte_em_uso() -> str:
         return "parquet"
 
 
-@st.cache_data(ttl=_TTL_STATUS_S, show_spinner=False)
+@st.cache_data(ttl=_TTL_STATUS_S, max_entries=_MAX_ENTRIES_STATUS, show_spinner=False)
 def neon_disponivel() -> bool:
     """Disponibilidade do Neon para o indicador do cabeçalho (cache curto: evita reconectar a cada rerun)."""
     try:
@@ -106,6 +109,11 @@ def neon_disponivel() -> bool:
         return db.is_available()
     except Exception:
         return False
+
+
+def limpar_cache_dados() -> None:
+    """Limpa todo o cache de dados do Streamlit."""
+    st.cache_data.clear()
 
 
 # ------------------------------------------------------------------------------
@@ -230,7 +238,7 @@ def _carregar(tabela: str, colunas: Tuple[str, ...], regras: List[Regra]) -> Car
 # ------------------------------------------------------------------------------
 # API pública
 # ------------------------------------------------------------------------------
-@st.cache_data(ttl=settings.CACHE_TTL_GOLD_SECONDS, show_spinner=False)
+@st.cache_data(ttl=settings.CACHE_TTL_GOLD_SECONDS, max_entries=_MAX_ENTRIES_GOLD, show_spinner=False)
 def _load_gold_cached(
     tabela: str,
     filtros: Optional[Filtros],
@@ -244,7 +252,7 @@ def _load_gold_cached(
     return _carregar(tabela, cols, regras)
 
 
-@st.cache_data(ttl=settings.CACHE_TTL_DIM_SECONDS, show_spinner=False)
+@st.cache_data(ttl=settings.CACHE_TTL_DIM_SECONDS, max_entries=_MAX_ENTRIES_DIM, show_spinner=False)
 def _load_dim_cached(nome: str, fonte_status: str) -> Carga:
     return _carregar(nome, TABELAS[nome], [])
 

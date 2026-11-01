@@ -13,8 +13,8 @@ from src.config.settings import (
 )
 from src.config.universe import COMPANIES
 from src.models.contracts import Filtros
-from src.ui.data_loader import DadosIndisponiveis, load_dim
-from src.ui.state import get_default_filtros, montar_filtros, reset_filtros
+from src.ui.data_loader import DadosIndisponiveis, limpar_cache_dados, load_dim, ultima_atualizacao
+from src.ui.state import get_default_filtros, montar_filtros, reset_filtros, voltar_landing
 
 
 def _obter_dados_empresas() -> pd.DataFrame:
@@ -51,10 +51,69 @@ def _parse_date(valor: str) -> date:
 
 def render() -> Filtros:
     """Renderiza os filtros globais na sidebar e devolve o contrato Filtros imutável."""
+
+    st.sidebar.markdown(
+        '<h1 class="fx-header-title">Filtros Globais</h1>', unsafe_allow_html=True
+    )
+
+    col_btn1, col_btn2 = st.sidebar.columns(2, vertical_alignment="center")
+
+    with col_btn1:
+        if st.button("⬅️ Voltar ao Início", key="btn_sidebar_voltar", use_container_width=True):
+            voltar_landing()
+            st.rerun()
+
+    with col_btn2:
+        st.button(
+            "🧹 Resetar filtros",
+            on_click=reset_filtros,
+            help="Restaura para as configurações padrão.",
+            use_container_width=True,
+        )
+
+    if st.sidebar.button(
+        "🔄 Atualizar dados",
+        key="btn_sidebar_atualizar_cache",
+        help="Limpa o cache e força a recarga da camada Ouro.",
+        use_container_width=True,
+    ):
+        limpar_cache_dados()
+        st.rerun()
+
+    dt_atualizacao = ultima_atualizacao()
+    str_atualizacao = (
+        dt_atualizacao.strftime("%d/%m/%Y %H:%M") if dt_atualizacao else "N/D"
+    )
+    st.sidebar.caption(f"Última atualização Ouro: `{str_atualizacao}`")
+
     if "filtros" not in st.session_state:
         st.session_state["filtros"] = get_default_filtros()
 
     f_state = st.session_state["filtros"]
+
+    p_ini_str, p_fim_str = f_state.get(
+        "periodo", (DEFAULT_BACEN_START_DATE, DEFAULT_BACEN_END_DATE)
+    )
+    p_ini_date = _parse_date(p_ini_str)
+    p_fim_date = _parse_date(p_fim_str)
+
+    periodo_input = st.sidebar.date_input(
+        "Período de Análise",
+        value=(p_ini_date, p_fim_date),
+        help="Define a janela temporal global para consulta de cotações, demonstrativos e dados macro.",
+    )
+
+    if isinstance(periodo_input, (tuple, list)) and len(periodo_input) == 2:
+        d_ini, d_fim = periodo_input[0], periodo_input[1]
+    elif isinstance(periodo_input, (tuple, list)) and len(periodo_input) == 1:
+        d_ini, d_fim = periodo_input[0], periodo_input[0]
+    else:
+        d_ini, d_fim = p_ini_date, p_fim_date
+
+    if d_ini > d_fim:
+        st.sidebar.error("Data inicial não pode ser posterior à data final.")
+
+    periodo_tuple = (d_ini.strftime("%Y-%m-%d"), d_fim.strftime("%Y-%m-%d"))
 
     df_emp = _obter_dados_empresas()
     todos_setores = sorted(list(df_emp["setor_analitico"].dropna().unique()))
@@ -88,32 +147,6 @@ def render() -> Filtros:
         help="Seleciona as empresas/tickers considerados nas análises.",
     )
 
-    p_ini_str, p_fim_str = f_state.get(
-        "periodo", (DEFAULT_BACEN_START_DATE, DEFAULT_BACEN_END_DATE)
-    )
-    p_ini_date = _parse_date(p_ini_str)
-    p_fim_date = _parse_date(p_fim_str)
-
-    periodo_input = st.sidebar.date_input(
-        "Período de Análise",
-        value=(p_ini_date, p_fim_date),
-        help="Define a janela temporal global para consulta de cotações, demonstrativos e dados macro.",
-    )
-
-    if isinstance(periodo_input, (tuple, list)) and len(periodo_input) == 2:
-        d_ini, d_fim = periodo_input[0], periodo_input[1]
-    elif isinstance(periodo_input, (tuple, list)) and len(periodo_input) == 1:
-        d_ini, d_fim = periodo_input[0], periodo_input[0]
-    else:
-        d_ini, d_fim = p_ini_date, p_fim_date
-
-    periodo_invalido = False
-    if d_ini > d_fim:
-        st.sidebar.error("Data inicial não pode ser posterior à data final.")
-        periodo_invalido = True
-
-    periodo_tuple = (d_ini.strftime("%Y-%m-%d"), d_fim.strftime("%Y-%m-%d"))
-
     todos_indicadores = list(BACEN_SERIES.keys())
     indicadores_salvos = [
         i for i in f_state.get("indicadores_bacen", []) if i in todos_indicadores
@@ -124,12 +157,6 @@ def render() -> Filtros:
         options=todos_indicadores,
         default=indicadores_salvos,
         help="Controla séries macroeconômicas secundárias nos gráficos e tabelas do Dashboard 1.",
-    )
-
-    st.sidebar.button(
-        "🧹 Resetar filtros",
-        on_click=reset_filtros,
-        help="Restaura todos os filtros globais para as configurações padrão.",
     )
 
     n_empresas = len(tickers_selecionados)

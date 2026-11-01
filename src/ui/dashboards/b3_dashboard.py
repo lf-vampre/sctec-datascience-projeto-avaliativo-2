@@ -110,7 +110,7 @@ def render(filtros: Filtros) -> None:
     tickers_disponiveis = list(pivot_close.columns)
 
     # Filtros Locais em Expander
-    with st.expander("🔍 Exibir filtros disponíveis", expanded=False):
+    with st.expander("🔍 Exibir filtros Locais disponíveis. Filtros Globais, acesse o sidebar!", expanded=False):
         f1, f2, f3, f4 = st.columns(4)
         with f1:
             sel_destaque = st.selectbox(
