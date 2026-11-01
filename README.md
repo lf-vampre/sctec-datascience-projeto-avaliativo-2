@@ -357,6 +357,12 @@ Na análise técnica e performance do mercado de ações (B3) foram obseravdos o
 - **Relação Risco vs. Retorno & Sharpe:** A análise da relação entre volatilidade anualizada e retorno acumulado destacou **PRIO3** com a melhor relação de Sharpe empírica do período, superando a taxa livre de risco (Selic Efetiva diária).
 - **Risco de Cauda & Drawdown:** Na avaliação de resiliência, a carteira equiponderada apresentou controle de drawdown em comparação com os papéis de maior volatilidade individual. O gráfico de área de drawdown evidenciou os momentos de maior estresse do mercado entre 2021 e 2022.
 
+Principais achados da análise integrada:
+
+- **Agregado da Carteira:** Durante o ciclo monetário observado (com taxa Selic vigente em 11,75% a.a.), a carteira consolidada registrou uma Receita Líquida Industrial de R$ 1.258,90 B e Lucro Líquido Consolidado de R$ 275,64 B.
+
+- **Liderança Setorial Multidimensional:** O setor de Materiais Básicos registrou a maior pontuação média no Score Final Consolidado (73.6 pts), sustentado por um Pilar de Solidez Contábil de 100.0 pts, Pilar de Resiliência Macro de 88.7 pts e Pilar de Retorno em Bolsa de 32.2 pts.
+
 ---
 
 ## 8. Discussão e Limitações da Análise
@@ -389,9 +395,26 @@ Na análise técnica e performance do mercado de ações (B3) foram obseravdos o
 - **Classificações Próprias:** O enquadramento em setores analíticos e o indicador `exportadora_commodities` seguem critérios definidos na arquitetura do projeto.
 
 - **Janela de Observação:** Dados restritos ao período de 2021 a 2023. Desempenhos e métricas históricas não representam garantia de rentabilidade futura.
+
 - **Taxa Livre de Risco & Sharpe Empírico:** O cálculo do excesso de retorno no Índice de Sharpe utiliza a série de Selic Efetiva diária (código BACEN 1178, proxy do CDI) como taxa livre de risco (DM-02). A premissa de normalidade na distribuição de retornos diários é uma simplificação estatística.
+
 - **Volume Financeiro Aproximado:** O volume financeiro diário é aproximado pelo produto do preço de fechamento ajustado pela quantidade negociada obtida via `yfinance`, podendo haver pequenas variações em relação ao volume financeiro oficial consolidado da B3.
+
 - **Preços Ajustados:** Cotações históricas utilizam ajuste automático por proventos e desdobramentos (`auto_adjust=True`).
+
+**Cobertura Histórica e Amostral:** Análise restrita a 3 exercícios sociais e a um conjunto selecionado de setores representativos da B3.
+
+**1º Ano Parcial:** O primeiro ano do recorte histórico utiliza como base o primeiro pregão disponível da série temporal e é sinalizado visualmente como parcial.
+
+**Definição Simplificada de Alavancagem:** A métrica de alavancagem financeira utiliza padronização própria derivada da estrutura consolidada de demonstrativos.
+
+**Estresse Cambial por Limiar Arbitrário:** A identificação de episódios de choque cambial adota um limiar fixo de variação da PTAX no período.
+
+**Caráter Descritivo do Ranking:** O ranking setorial possui finalidade estritamente descritiva e ponderada. Não realiza inferências estatísticas de causalidade nem constitui recomendação de investimento.
+
+**Tratamento Metodológico de Instituições Financeiras (Bancos):** Devido à estrutura do plano contábil COSIF (ausência de demonstrativo tradicional de Margem EBIT e Liquidez Corrente), o setor Financeiro possui solidez avaliada exclusivamente pelo ROE (Solidez Parcial / ADR-09), enquanto pontua normalmente nos pilares de Bolsa e Resiliência Macro.
+
+**Classificações Analíticas Próprias:** Mapeamento setorial customizado para harmonizar as nomenclaturas entre as bases do BACEN, CVM e B3.
 
 ### 8.1. Limitações Conhecidas e Observações das Extrações (Camada Bronze)
 
@@ -474,6 +497,22 @@ O Dashboard de Mercado e Risco consolida a inteligência quantitativa de ativos 
 3. **Distribuição dos Retornos Diários:** Histograma de frequência com boxplot marginal e indicação visual da cauda no Percentil 5%. (`docs/img/d3_histograma.png`)
 4. **Área de Drawdown:** Evolução da queda percentual acumulada a partir dos topos históricos dos ativos e da carteira. (`docs/img/d3_drawdown.png`)
 5. **Médias Móveis (SMA 21 / 50):** Gráfico multilinha com preço de fechamento e médias de curto e médio prazo para análise de tendência de ativo selecionado. (`docs/img/d3_sma.png`)
+
+### 10.5. Dashboard 4 — Visão Integrada (Tríade)
+
+Painel consolidado cruzando dados macroeconômicos, contábeis e de mercado em 6 abas analíticas:
+
+1. Visão Geral Integrada & Storytelling: Resumo executivo em linguagem natural e KPIs da carteira.
+
+2. Juros e Setores: Sensibilidade dos demonstrativos contábeis frente à evolução do ciclo da taxa Selic.
+
+3. Câmbio e Desempenho: Impacto das oscilações da PTAX sobre retornos e margens operacionais.
+
+4. Matriz Risco x Retorno x Solidez: Dispersão multidimensional integrando os três eixos da Tríade.
+
+5. Ranking Setorial Multidimensional: Comparativo setorial por pilar com exibição do score final consolidado.
+
+6. Dados e Metodologia: Exibição das bases de dados processadas (BACEN, CVM e B3) e notas metodológicas de comparabilidade.
 
 ---
 

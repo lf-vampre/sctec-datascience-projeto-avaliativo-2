@@ -85,3 +85,15 @@ BRONZE_TTL_DAYS: int = 1            # Reutilização de coleta Bronze no DataOps
 # ------------------------------------------------------------------------------
 SANDBOX_MAX_TICKERS: int = 5
 SANDBOX_MIN_INTERVAL_SECONDS: int = 30
+
+# ------------------------------------------------------------------------------
+# Parâmetros Estresse Cambial & Ranking (D4 Integrado)
+# ------------------------------------------------------------------------------
+ESTRESSE_CAMBIAL_JANELA_DIAS: int = 30
+ESTRESSE_CAMBIAL_LIMIAR_PCT: float = 5.0
+
+RANKING_PESOS_DEFAULT: Dict[str, float] = {
+    "retorno_bolsa": 1.0,
+    "resiliencia_macro": 1.0,
+    "solidez_contabil": 1.0,
+}
