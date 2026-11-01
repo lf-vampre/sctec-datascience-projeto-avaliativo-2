@@ -98,6 +98,16 @@ def fonte_em_uso() -> str:
         return "parquet"
 
 
+@st.cache_data(ttl=_TTL_STATUS_S, show_spinner=False)
+def neon_disponivel() -> bool:
+    """Disponibilidade do Neon para o indicador do cabeçalho (cache curto: evita reconectar a cada rerun)."""
+    try:
+        from src.utils import db
+        return db.is_available()
+    except Exception:
+        return False
+
+
 # ------------------------------------------------------------------------------
 # Validação e tradução de filtros
 # ------------------------------------------------------------------------------
@@ -220,8 +230,6 @@ def _carregar(tabela: str, colunas: Tuple[str, ...], regras: List[Regra]) -> Car
 # ------------------------------------------------------------------------------
 # API pública
 # ------------------------------------------------------------------------------
-# O status da fonte entra na chave do cache: quando o Neon cai ou volta, a chave muda
-# e a carga é refeita em até _TTL_STATUS_S, sem esperar o TTL cheio dos dados.
 @st.cache_data(ttl=settings.CACHE_TTL_GOLD_SECONDS, show_spinner=False)
 def _load_gold_cached(
     tabela: str,

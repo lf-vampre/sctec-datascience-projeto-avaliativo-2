@@ -149,6 +149,16 @@
   font-weight: 600;
 }
 
+/* Menu Horizontal (Segmented Control / Radio Horizontal) */
+[data-testid="stSegmentedControl"],
+[data-testid="stRadio"] > div[role="radiogroup"] {
+  gap: var(--fx-space-xs);
+  background-color: var(--fx-color-surface);
+  padding: var(--fx-space-xs);
+  border-radius: var(--fx-radius-md);
+  border: 1px solid var(--fx-color-border);
+}
+
 /* Botões */
 .stButton > button {
   border-radius: var(--fx-radius-md);
