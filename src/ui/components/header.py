@@ -16,11 +16,6 @@ def header(
     safe_titulo = html.escape(titulo)
     safe_subtitulo = html.escape(subtitulo) if subtitulo else None
 
-    if mostrar_botao_voltar:
-        if st.button("⬅️ Voltar ao Início", key=f"btn_header_voltar_{safe_titulo}"):
-            voltar_landing()
-            st.rerun()
-
     sub_html = f'<p class="fx-header-subtitle">{safe_subtitulo}</p>' if safe_subtitulo else ""
 
     html_code = (
@@ -31,3 +26,8 @@ def header(
     )
 
     st.markdown(html_code, unsafe_allow_html=True)
+
+    if mostrar_botao_voltar:
+            if st.button("⬅️ Voltar ao Início", key=f"btn_header_voltar_{safe_titulo}"):
+                voltar_landing()
+                st.rerun()
