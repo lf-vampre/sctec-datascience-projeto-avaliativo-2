@@ -107,7 +107,7 @@ class DataProfiler:
 
         # Resumo inicial
         periodo_str = "N/A"
-        col_data = next((c for c in ["data", "dt_refer", "DT_FIM_EXERC"] if c in df.columns), None)
+        col_data = next((c for c in df.columns if c.lower() in ("data", "dt_refer", "dt_fim_exerc")), None)
         if col_data and not df[col_data].dropna().empty:
             datas = pd.to_datetime(df[col_data].dropna())
             periodo_str = f"{datas.min().strftime('%Y-%m-%d')} a {datas.max().strftime('%Y-%m-%d')}"
@@ -314,8 +314,13 @@ class DataProfiler:
 
     def _perfil_cvm(self, df: pd.DataFrame, relatorio: RelatorioEDA) -> None:
         """Profilagem dos demonstrativos contábeis da CVM."""
-        cols_chave = [c for c in ["cd_cvm", "DT_FIM_EXERC", "cd_conta"] if c in df.columns]
-        if len(cols_chave) == 3:
+        col_cvm = next((c for c in df.columns if c.lower() == "cd_cvm"), None)
+        col_exerc = next((c for c in df.columns if c.lower() in ("dt_fim_exerc", "dt_refer")), None)
+        col_conta = next((c for c in df.columns if c.lower() == "cd_conta"), None)
+        col_valor = next((c for c in df.columns if c.lower() == "vl_conta"), None)
+
+        if col_cvm and col_exerc and col_conta:
+            cols_chave = [col_cvm, col_exerc, col_conta]
             dup_count = df.duplicated(subset=cols_chave).sum()
             if dup_count > 0:
                 relatorio.achados.append(
@@ -323,28 +328,28 @@ class DataProfiler:
                         id="CVM_DUPLICATES",
                         severidade="critico",
                         titulo="Duplicatas na Chave Natural CVM",
-                        detalhe=f"Foram encontradas {dup_count} duplicatas para (cd_cvm, DT_FIM_EXERC, cd_conta).",
+                        detalhe=f"Foram encontradas {dup_count} duplicatas para ({col_cvm}, {col_exerc}, {col_conta}).",
                         metrica=f"duplicatas = {dup_count}",
                         acao_sugerida="Verificar consolidação e versão DFP no CvmCleaner.",
                     )
                 )
 
-        if "cd_cvm" in df.columns and "cd_conta" in df.columns and "vl_conta" in df.columns:
+        if col_cvm and col_exerc and col_conta and col_valor:
             # Análise por tipo de plano (financeiras vs industriais)
             bancos_cvm = {info.cd_cvm for info in COMPANIES.values() if info.tipo_plano == "financeira"}
             
             # Checar razões contábeis atípicas
             # Agrupar contas por cd_cvm e exercício
             pivoted = df.pivot_table(
-                index=["cd_cvm", "DT_FIM_EXERC"],
-                columns="cd_conta",
-                values="vl_conta",
+                index=[col_cvm, col_exerc],
+                columns=col_conta,
+                values=col_valor,
                 aggfunc="last"
             ).reset_index()
 
             for _, row in pivoted.iterrows():
-                cd_cvm = row["cd_cvm"]
-                exerc = row["DT_FIM_EXERC"]
+                cd_cvm = row[col_cvm]
+                exerc = row[col_exerc]
                 is_banco = cd_cvm in bancos_cvm
 
                 rl = row.get("3.01", np.nan)

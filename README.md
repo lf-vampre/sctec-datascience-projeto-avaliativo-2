@@ -155,11 +155,13 @@ python scripts/check_gold_sampling.py
 | **CVM** | WEGE3 (Lucro Líquido) | DFP 2023 | R$ 5.867.615.000,00 | R$ 5.732.036.000,00 | < 2,4% | **VALIDADO (Residual)** |
 
 
-### 4.5. DataOps On-Demand (Orquestração do Pipeline)
+### 4.5. DataOps On-Demand 
+
+#### 4.5.1. Orquestração do Pipeline
 
 O **DataOps Control Tower** executa o pipeline completo (Bronze → Prata → Ouro) a partir da interface. Nada é carregado na abertura do app: a landing page não importa ETL, banco ou gráficos, e o módulo só é carregado quando o usuário escolhe o modo DataOps.
 
-#### Fluxo de uso
+##### Fluxo de uso
 1. **Landing → DataOps:** o usuário escolhe o modo na landing page.
 2. **Autenticação (opcional):** sem senha, a execução roda em **Sandbox**. Com a senha configurada em `dataops_password` (secrets), roda em **Produção**. A comparação é feita em tempo constante (`hmac.compare_digest`) e a senha não é guardada no estado da sessão.
 3. **Parâmetros:** seleção de tickers do universo, período do BACEN, período da B3 (data final exclusiva no `yfinance`) e anos de exercício da CVM, com validação de datas e botão para restaurar o período padrão.
@@ -174,7 +176,7 @@ O **DataOps Control Tower** executa o pipeline completo (Bronze → Prata → Ou
 
 Cada etapa só roda se o pré-requisito foi concluído nesta sessão ou já existe no destino da camada anterior.
 
-#### Modos de execução
+##### Modos de execução
 
 | | Sandbox (sem senha) | Produção (com senha) |
 | :--- | :--- | :--- |
@@ -186,29 +188,41 @@ Cada etapa só roda se o pré-requisito foi concluído nesta sessão ou já exis
 
 Isso permite expor o DataOps em um app público sem que um visitante altere a base usada pelos dashboards. O modo Sandbox apenas para demonstrar o fluxo real do pipeline de dados.
 
-#### Logs e progresso
+##### Logs e progresso
 - **Logs em tempo real:** cada evento traz data/hora, nível, camada, fonte (classe responsável), etapa e mensagem. Exemplo: `[Bronze - CadastroExtractor]`.
 - **Filtros:** por fonte e por nível (`INFO`, `WARNING`, `ERROR`).
 - **Limite em memória:** apenas os últimos 500 eventos são mantidos na sessão.
 - **Falhas visíveis:** a etapa com erro é destacada na tela com a mensagem retornada, sem exibir stacktrace.
 
-#### Reaproveitamento do Bronze
+##### Reaproveitamento do Bronze
 Antes de baixar dados, cada extrator verifica se o Bronze existente pode ser reutilizado. O reuso exige **as duas condições**:
 - arquivo dentro do TTL (`BRONZE_TTL_DAYS`);
 - **parâmetros idênticos** aos da carga que o gerou (tickers, períodos, anos, séries), registrados em um arquivo `.meta.json` ao lado de cada Parquet.
 
 Se qualquer parâmetro mudar, o Bronze é extraído novamente (requisição a API) e o log informa o motivo. O Bronze funciona como *snapshot* do último run, sem acumular tickers de execuções anteriores.
 
-#### Gestão de memória
+##### Gestão de memória
 - **Por etapa:** o orquestrador libera objetos e executa `gc.collect()` ao final de cada etapa, inclusive em caso de erro.
 - **Ao fim do pipeline:** limpeza automática do cache de dados (`st.cache_data.clear()`), remoção dos handlers de log e descarte do orquestrador. Apenas o resumo das etapas e os logs (texto) permanecem na sessão para consulta.
 - **Reiniciar:** o botão "Voltar aos Parâmetros" descarta também o resumo e os logs.
 
-#### Relatório de saúde da Ouro
+##### Relatório de saúde da Ouro
 Ao final da execução, o DataOps exibe para cada tabela da Ouro:
 - linhas no Parquet e no Neon (`COUNT`, sem carregar os dados);
 - fonte ativa da leitura (Neon, Parquet de fallback ou sandbox);
 - **divergência**, quando Neon, Parquet e `_manifest.json` não concordam. A divergência é uma **informação**, não um erro.
+
+
+#### 4.5.2 Análise Exploratória de Dados (EDA) e Qualidade dos Dados
+
+A camada Prata é submetida a profiling estatístico e diagnóstico de qualidade via classe `DataProfiler` (`src/etl/eda/profiler.py`). A EDA opera sob a regra de **somente leitura** e é executada sob demanda no DataOps Control Tower, comprova a eficácia das limpezas e sinaliza anomalias estruturais.
+
+* **Deduplicação Comprovada:** 0 duplicatas nas chaves naturais `(codigo_sgs, data)` no BACEN, `(ticker, data)` na B3, `(cd_cvm, dt_fim_exerc, cd_conta)` na CVM e `(cd_cvm)` no Cadastro.
+* **Integridade das Séries Temporais:** Cobertura de 1.250 pregões na B3 (2019-2023) por ticker e séries sem lacunas no BACEN (SGS 432, 1178, 433, 13522, 1, 24364, 196).
+* **Diagnóstico de Outliers e Normalidade:** Identificação de picos de variação no IPCA (SGS 433) em 2021-2022 via IQR/MAD robusto e rejeição de normalidade nos retornos diários da B3 via estatística de Jarque-Bera ($p < 0,05$).
+* **Nulos Estruturais Contábeis:** Confirmação da ausência de Margem EBIT, Liquidez Corrente e Dívida Líquida em bancos (ITUB4, BBDC4, BBAS3, SANB11).
+
+
 
 > 🚧 Prints do DataOps (formulário, execução com logs e relatório de saúde) a incluir na Seção 10 (Card 11).
 
@@ -396,7 +410,7 @@ Principais achados da análise integrada:
 
 - **Janela de Observação:** Dados restritos ao período de 2021 a 2023. Desempenhos e métricas históricas não representam garantia de rentabilidade futura.
 
-- **Taxa Livre de Risco & Sharpe Empírico:** O cálculo do excesso de retorno no Índice de Sharpe utiliza a série de Selic Efetiva diária (código BACEN 1178, proxy do CDI) como taxa livre de risco (DM-02). A premissa de normalidade na distribuição de retornos diários é uma simplificação estatística.
+- **Taxa Livre de Risco & Sharpe Empírico:** O cálculo do excesso de retorno no Índice de Sharpe utiliza a série de Selic Efetiva diária (código BACEN 1178, proxy do CDI) como taxa livre de risco. A premissa de normalidade na distribuição de retornos diários é uma simplificação estatística.
 
 - **Volume Financeiro Aproximado:** O volume financeiro diário é aproximado pelo produto do preço de fechamento ajustado pela quantidade negociada obtida via `yfinance`, podendo haver pequenas variações em relação ao volume financeiro oficial consolidado da B3.
 
@@ -412,9 +426,13 @@ Principais achados da análise integrada:
 
 **Caráter Descritivo do Ranking:** O ranking setorial possui finalidade estritamente descritiva e ponderada. Não realiza inferências estatísticas de causalidade nem constitui recomendação de investimento.
 
-**Tratamento Metodológico de Instituições Financeiras (Bancos):** Devido à estrutura do plano contábil COSIF (ausência de demonstrativo tradicional de Margem EBIT e Liquidez Corrente), o setor Financeiro possui solidez avaliada exclusivamente pelo ROE (Solidez Parcial / ADR-09), enquanto pontua normalmente nos pilares de Bolsa e Resiliência Macro.
+**Tratamento Metodológico de Instituições Financeiras (Bancos):** Devido à estrutura do plano contábil COSIF (ausência de demonstrativo tradicional de Margem EBIT e Liquidez Corrente), o setor Financeiro possui solidez avaliada exclusivamente pelo ROE (Solidez Parcial), enquanto pontua normalmente nos pilares de Bolsa e Resiliência Macro.
 
 **Classificações Analíticas Próprias:** Mapeamento setorial customizado para harmonizar as nomenclaturas entre as bases do BACEN, CVM e B3.
+
+* **Distribuição de Retornos e Sharpe Ratio (EDA):** A análise estatística de Jarque-Bera na Prata confirmou a rejeição de normalidade com caudas pesadas ($p < 0,05$) nos retornos diários dos ativos da B3. O Índice de Sharpe assume distribuição normal de retornos; portanto, os valores apresentados no Dashboard de Mercado (D3) devem ser interpretados como proxy descritiva e não como métrica paramétrica exata.
+
+* **Patrimônio Líquido Negativo:** Empresas com passivo a descoberto em exercícios específicos (PL $\le 0$) geram distorções no cálculo do ROE. Nestes casos, o indicador é sinalizado com ressalva visual e isolado de ordenações diretas.
 
 ### 8.1. Limitações Conhecidas e Observações das Extrações (Camada Bronze)
 
@@ -447,7 +465,7 @@ Principais achados da análise integrada:
 
 #### 10.1.1. Landing Page e Roteamento Sob Demanda (Lazy Loading)
 - **Roteamento por `st.session_state`**: A navegação entre a Landing Page, o DataOps Control Tower e o BI Executivo ocorre sem uso de páginas nativas multipage do Streamlit, mantendo o controle centralizado em `app.py` através da chave `st.session_state["modo"]`.
-- **Carga Sob Demanda (ADR-11, RNF-01)**: Módulos pesados (`src.etl`, `src.ui.data_loader`, `src.ui.dashboards`, `plotly`) não são importados na inicialização do aplicativo. Os imports das visões (`dataops_view` e `executive_view`) ocorrem estritamente dentro dos blocos condicionais de roteamento, garantindo zero alocação de memória e zero conexões a banco antes do usuário selecionar explicitamente o modo de operação.
+- **Carga Sob Demanda**: Módulos pesados (`src.etl`, `src.ui.data_loader`, `src.ui.dashboards`, `plotly`) não são importados na inicialização do aplicativo. Os imports das visões (`dataops_view` e `executive_view`) ocorrem estritamente dentro dos blocos condicionais de roteamento, garantindo zero alocação de memória e zero conexões a banco antes do usuário selecionar explicitamente o modo de operação.
 
 #### 10.1.2. Gestão do Estado de Sessão (`src/ui/state.py`)
 - **Centralização de Defaults**: O módulo `src/ui/state.py` inicializa e mantém o dicionário de estado com chaves globais padrão:
