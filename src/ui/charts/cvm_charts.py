@@ -33,7 +33,7 @@ def _aplicar_layout_padrao(fig: go.Figure, titulo: str = "") -> go.Figure:
         legend=dict(
             orientation="h",
             yanchor="top",
-            y=-0.22,
+            y=-0.20,
             xanchor="center",
             x=0.5,
         ),
@@ -73,6 +73,15 @@ def fig_receita_agrupada(painel: pd.DataFrame) -> Tuple[go.Figure, Optional[go.F
             hovertemplate="<b>%{x}</b> (%{fullData.name})<br>Receita Líquida: %{customdata[0]}<extra></extra>"
         )
         fig_ind = _aplicar_layout_padrao(fig_ind, "Receita Líquida — Industriais / Comerciais")
+        fig_ind.update_layout(
+            legend=dict(
+                orientation="h",
+                yanchor="top",
+                y=-0.30,
+                xanchor="center",
+                x=0.5,
+            ),
+        )
 
     if has_fin:
         sub_fin = df[~df["comparavel_receita"] & df["RECEITA_INTERMEDIACAO"].notna()].copy()

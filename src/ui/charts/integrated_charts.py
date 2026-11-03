@@ -545,7 +545,7 @@ def fig_ranking_setorial(df_ranking: pd.DataFrame) -> go.Figure:
         legend=dict(
             orientation="h",
             yanchor="top",
-            y=-0.19,
+            y=-0.25,
             xanchor="center",
             x=0.5,
         ),

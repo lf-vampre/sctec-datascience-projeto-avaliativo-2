@@ -22,7 +22,7 @@ def _aplicar_layout_padrao(fig: go.Figure, titulo: str = "") -> go.Figure:
         legend=dict(
             orientation="h",
             yanchor="top",
-            y=-0.22,
+            y=-0.27,
             xanchor="center",
             x=0.5,
         ),
@@ -172,6 +172,12 @@ def fig_hist_retornos(
         color_discrete_sequence=[theme.COLOR_TOKENS.secondary],
         labels={"retorno_pct": "Retorno Diário (%)"},
     )
+
+    # Ajusta o espaço entre o boxplot (topo) e o histograma (base)
+    fig.update_layout(
+        yaxis=dict(domain=[0.0, 0.70]),      # histograma: termina em 0.75
+        yaxis2=dict(domain=[0.83, 1.0]),     # boxplot: começa em 0.82
+    )   
 
     p5 = estatisticas.get("p5", np.nan)
     if not np.isnan(p5):

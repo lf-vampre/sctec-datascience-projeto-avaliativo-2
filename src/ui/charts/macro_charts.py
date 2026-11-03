@@ -82,10 +82,17 @@ def fig_politica_monetaria(painel: pd.DataFrame) -> go.Figure:
     fig.update_layout(
         title=dict(text="Política Monetária: Selic Meta, IPCA 12M e Juro Real Ex-Post", y=0.95),
         margin=dict(t=90),
-        legend=dict(x=1.0, xanchor="right", y=1.12, yanchor="bottom"),
         xaxis=dict(title=dict(text="Ano-Mês")),
         yaxis=dict(title=dict(text="% a.a.")),
         barmode="relative",
+        #legend=dict(x=1.0, xanchor="right", y=1.12, yanchor="bottom"),
+        legend=dict(
+                            orientation="h",
+                            yanchor="top",
+                            y=-0.22,
+                            xanchor="center",
+                            x=0.5,
+                        ),
     )
 
     return aplicar_template(fig)
@@ -126,9 +133,16 @@ def fig_ptax(
     fig.update_layout(
         title=dict(text="Evolução do Dólar PTAX e Períodos Acima da Média", y=0.95),
         margin=dict(t=90),
-        legend=dict(x=1.0, xanchor="right", y=1.12, yanchor="bottom"),
         xaxis=dict(title=dict(text="Data")),
         yaxis=dict(title=dict(text="PTAX (R$)")),
+        #legend=dict(x=1.0, xanchor="right", y=1.12, yanchor="bottom"),
+        legend=dict(
+                                    orientation="h",
+                                    yanchor="top",
+                                    y=-0.22,
+                                    xanchor="center",
+                                    x=0.5,
+                                ),
     )
 
     return aplicar_template(fig)
@@ -183,7 +197,14 @@ def fig_dispersao_ptax_ipca(
         title=dict(text=f"Dispersão: PTAX x IPCA 12M{txt_defasagem}"),
         xaxis=dict(title=dict(text="PTAX (R$)")),
         yaxis=dict(title=dict(text="IPCA 12M (% a.a.)")),
-        legend=dict(x=1.0, xanchor="right", y=1, yanchor="bottom"),
+        #legend=dict(x=1.0, xanchor="right", y=1, yanchor="bottom"),
+        legend=dict(
+            orientation="h",
+            yanchor="top",
+            y=-0.22,
+            xanchor="center",
+            x=0.5,
+        ),
         annotations=[
             dict(
                 text=f"r = {r:.2f} (n = {n_obs})",
@@ -267,7 +288,6 @@ def fig_ibc(
     fig.update_layout(
         title=dict(text="Atividade Econômica (IBC-Br) vs. Selic Meta e Ciclos Monetários", y=0.95),
         margin=dict(t=90),
-        legend=dict(x=1.0, xanchor="right", y=1.18, yanchor="bottom"),
         xaxis=dict(title=dict(text="Ano-Mês")),
         yaxis=dict(title=dict(text="IBC-Br (Índice)")),
         yaxis2=dict(
@@ -276,6 +296,14 @@ def fig_ibc(
             side="right",
             showgrid=False,
         ),
+        #legend=dict(x=1.0, xanchor="right", y=1.18, yanchor="bottom"),
+        legend=dict(
+                    orientation="h",
+                    yanchor="top",
+                    y=-0.22,
+                    xanchor="center",
+                    x=0.5,
+                ),
     )
 
     return aplicar_template(fig)
