@@ -327,7 +327,7 @@ A tela de abertura apresenta a visão geral dos modos de operação da plataform
 
 <br>
 
-O painel lateral (Sidebar) oferece filtros cruzados com suporte a seleção de período, tickers, setores e botão funcional de reset:
+O painel lateral (Sidebar) oferece filtros cruzados (Global, aplicado a todos os dashboards) com suporte a seleção de período, tickers, setores e botão funcional de reset:
 
 <br>
 
@@ -375,6 +375,10 @@ Monitoramento das séries temporais oficiais do Banco Central do Brasil:
 
 * **Visão Geral:** KPIs estratégicos e gráfico combinado da política monetária.
 
+*KPIs Globais:* Exibem o valor mais recente do período (Selic Meta, IPCA 12M, Juro Real Ex-Post e Dólar PTAX) acompanhado da variação (delta) em relação a 12 meses anteriores (em p.p. ou variação percentual).
+
+*Gráfico Política Monetária:* Combina a curva da Selic Meta (% a.a.) e IPCA 12M (% a.a.) em linhas com o Juro Real Ex-Post em barras. Permite identificar visualmente o grau de aperto ou afrouxamento monetário do Banco Central.
+
 <br>
 
 ![d1_1](./images/d1/d1_1_visao_geral.png)
@@ -382,6 +386,11 @@ Monitoramento das séries temporais oficiais do Banco Central do Brasil:
 <br>
 
 * **Câmbio (PTAX):** Série histórica com destaques acima da média e dispersão cambial.
+
+*Evolução do Dólar PTAX:* Gráfico de linha temporal da taxa PTAX Venda diária/mensal. A linha tracejada indica a média histórica do período (R$ 4,93) e as áreas sombreadas destacam os ciclos em que a moeda norte-americana operou acima da média.
+
+
+*Dispersão PTAX x IPCA 12M:* Diagrama de dispersão onde cada ponto representa um mês. O eixo X indica o PTAX, o eixo Y a taxa de IPCA 12M, a cor codifica o ano (2019 a 2023) e o tamanho da bolha é proporcional ao patamar da Selic.
 
 <br>
 
@@ -391,6 +400,14 @@ Monitoramento das séries temporais oficiais do Banco Central do Brasil:
 
 * **Atividade Econômica:** Trajetória do IBC-Br dessazonalizado e bandas de ciclos monetários.
 
+*IBC-Br vs. Selic Meta e Ciclos Monetários:* Gráfico de dois eixos conectando o índice de atividade econômica do BACEN (IBC-Br com ajuste sazonal, eixo esquerdo) com a Selic Meta (eixo direito). As faixas verticais sombreadas categorizam a postura do COPOM em 3 fases:
+
+- Ciclo de Aperto (Rosa): Período de elevação contínua da taxa básica de juros.
+
+- Ciclo de Corte (Verde): Período de redução da Selic.
+
+- Manutenção (Cinza): Período de estabilidade da taxa.
+
 <br>
 
 ![d1_3](./images/d1/d1_3_atividade_economica.png)
@@ -399,6 +416,11 @@ Monitoramento das séries temporais oficiais do Banco Central do Brasil:
 
 * **Correlações:** Matriz térmica de Pearson e tabela paramétrica de defasagens.
 
+*Matriz de Pearson:* Mapa de calor apresentando o coeficiente de correlação linear $r \in [-1, 1]$ entre os pares de variáveis selecionadas.
+
+*Matriz de Defasagem (PTAX x IPCA 12M):* Tabela paramétrica que exibe a variação da correlação de Pearson conforme se aplica um deslocamento temporal de 0 a 9+ meses na inflação.
+      
+
 <br>
 
 ![d1_4](./images/d1/d1_4_correlacoes.png)
@@ -406,6 +428,23 @@ Monitoramento das séries temporais oficiais do Banco Central do Brasil:
 <br>
 
 * **Dados & Metodologia:** Leitura tabular e nota explicativa da Equação de Fisher.
+
+*Funcionamento dos Filtros Locais (Dashboard 1)*
+        
+Os filtros disponíveis no painel retrátil no topo deste dashboard atuam exclusivamente sobre os componentes visuais da visão **Inteligência Macroeconômica**. Não há impacto cruzado nos demais dashboards (CVM, B3 ou Integrado).
+        
+        * **Defasagem Câmbio x Inflação (meses):**
+          * **Escopo:** Afeta unicamente o gráfico de *Dispersão: PTAX x IPCA 12M* (Aba Câmbio PTAX).
+          * **Uso:** Desloca a série temporal do IPCA 12M em $N$ meses no tempo para analisar o efeito de *pass-through* cambial (o tempo de resposta da inflação frente às variações do Dólar PTAX).
+        * **Modo da Correlação:**
+          * **Escopo:** Afeta a *Matriz de Correlação de Pearson* (Aba Correlações).
+          * **Opções:** 
+            * **Níveis:** Calcula a correlação estatística direta entre os valores absolutos observados das séries.
+            * **Variações:** Aplica a primeira diferença mensal ($\Delta = x_t - x_{t-1}$) para eliminar tendências de não-estacionariedade e avaliar a correlação entre as oscilações de curto prazo.
+        * **Indicadores no Heatmap:**
+          * **Escopo:** Afeta a *Matriz de Correlação de Pearson* (Aba Correlações).
+          * **Uso:** Multiseletor que permite filtrar dinamicamente quais variáveis macroeconômicas serão incluídas no mapa de calor.
+       
 
 <br>
 
@@ -420,6 +459,12 @@ Diagnóstico de desempenho e solvência das companhias abertas:
 
 * **Visão Geral:** Métricas consolidadas e distribuição setorial de receita.
 
+*KPIs Globais:* Exibem a Receita Líquida Total (exclusivo companhias industriais/comerciais), Lucro Líquido Consolidado, ROE Médio da Carteira e Liquidez Corrente Média para o exercício foco, acompanhados da variação percentual ou em p.p. em relação ao ano anterior.
+
+*Receita Líquida vs. Intermediação Financeira:* Apresenta barras anuais agrupadas por empresa. A Receita de Intermediação Financeira (bancos) é segregada da Receita Líquida (indústrias), impedindo distorções na agregação de receitas de naturezas contábeis distintas.
+
+*Distribuição Setorial da Receita Líquida:* Gráfico de rosca demonstrando a representatividade percentual de cada setor sobre o faturamento total consolidado das empresas industriais.
+
 <br>
 
 ![d2_1](./images/d2/d2_1_visao_geral.png)
@@ -429,6 +474,16 @@ Diagnóstico de desempenho e solvência das companhias abertas:
 
 * **Rentabilidade:** Scatter em quadrantes (Margem vs. ROE) e boxplots de Margem EBIT.
 
+*Matriz Margem Líquida vs. ROE:* Diagrama de dispersão posicionando cada empresa em quatro quadrantes analíticos no exercício foco:
+- Líder: Margem Alta e ROE Alto.
+- Giro: Margem Baixa e ROE Alto (alta eficiência no uso do capital).
+- Nicho: Margem Alta e ROE Baixo.
+- Desafio: Margem Baixa e ROE Baixo.
+
+*Evolução Temporal da Margem Líquida:* Gráfico de linhas rastreando a trajetória de eficiência operacional percentual das empresas ao longo do tempo.
+
+*Distribuição da Margem EBIT por Grupo:* Painel de boxplots com eixos Y independentes por agrupamento, exibindo mediana, quartis e outliers de rentabilidade operacional.
+
 <br>
 
 ![d2_2](./images/d2/d2_2_rentabilidade.png)
@@ -437,6 +492,10 @@ Diagnóstico de desempenho e solvência das companhias abertas:
 
 * **Solvência:** Comparativo de Dívida Líquida vs. Liquidez Corrente com limiar ajustável.
 
+*Níveis de Solvência e Liquidez Corrente:* Visualização combinada que confronta o volume de Dívida Líquida em R$ (barras) contra a Liquidez Corrente (linha com marcador) no exercício foco, com suporte à linha de parâmetro ajustável.
+
+*Empresas com Pontos de Atenção na Liquidez:* Tabela que lista automaticamente empresas que possuem índice de Liquidez Corrente abaixo do limiar configurado e/ou Dívida Líquida positiva.
+
 <br>
 
 ![d2_3](./images/d2/d2_3_solvencia.png)
@@ -444,6 +503,24 @@ Diagnóstico de desempenho e solvência das companhias abertas:
 <br>
 
 * **Dados & Metodologia:** Demonstrativos limpos e regras de enquadramento contábil.
+
+*Funcionamento dos Filtros Locais (Dashboard 2)*
+
+        
+        Os filtros no topo desta página refinam as análises contábeis dentro do recorte temporal e corporativo definido pelo **Filtro Global da Sidebar**.
+        
+        * **Exercício Foco (KPIs & Dispersão):**
+          * **Escopo:** Seleciona o ano de referência ancorado para os 4 KPIs consolidados do topo, o gráfico de *Distribuição Setorial da Receita Líquida* (Aba Visão Geral), a *Matriz Margem Líquida vs. ROE* (Aba Rentabilidade) e a análise de *Solvência e Liquidez* (Aba Solvência).
+          * **Uso:** Permite isolar um exercício contábil específico para comparações transversais entre empresas. As séries temporais de linha (como a *Evolução Temporal da Margem Líquida*) permanecem exibindo o período temporal completo definido na Sidebar.
+        * **Agrupamento EBIT:**
+          * **Escopo:** Afeta a distribuição dos boxplots de Margem EBIT na aba *Rentabilidade*.
+          * **Opções:** 
+            * **Setor Analítico:** Agrupa as companhias pelas categorias setoriais padronizadas do projeto (Consumo & Varejo/Serviços, Energia, Indústria & Bens de Capital, Materiais Básicos).
+            * **Commodities vs Serviços:** Reorganiza a visualização comparando empresas produtoras/exportadoras de commodities primárias contra empresas voltadas a serviços e mercado interno.
+        * **Limiar de Liquidez Corrente (x):**
+          * **Escopo:** Afeta o gráfico combinatório de solvência e a tabela de atenção na aba *Solvência*.
+          * **Uso:** Ajusta dinamicamente a linha tracejada horizontal de corte (ex: 1,50x) para sinalizar visualmente e filtrar companhias industriais que operam abaixo do patamar de liquidez desejado.
+        
 
 <br>
 
@@ -458,6 +535,11 @@ Inteligência quantitativa de ativos cotados em bolsa:
 
 * **Rentabilidade Normalizada:** Desempenho comparativo com curva de nível Base 100.
 
+*KPIs Consolidados:* Exibem a rentabilidade acumulada média da carteira equiponderada, o ativo com maior desempenho (Destaque), o ativo com menor variação (Menor Perf.) e a volatilidade anualizada média no período.
+
+*Rentabilidade Comparativa Normalizada (Base 100):* Indexa todos os ativos no valor inicial de 
+100 na primeira data útil da janela temporal, permitindo comparar o crescimento relativo percentual de ações com faixas de preço absoluto distintas.
+
 <br>
 
 ![d3_1](./images/d3/d3_1_rentabilidade.png)
@@ -465,6 +547,10 @@ Inteligência quantitativa de ativos cotados em bolsa:
 <br>
 
 * **Risco e Retorno:** Scatter Risco vs. Retorno e tabela de indicadores ajustados (Sharpe/VaR).
+
+*Relação Risco vs. Retorno (Dispersão):* Confronta a Volatilidade Anualizada (%) no eixo X contra o Retorno Acumulado (%) no eixo Y. O tamanho de cada bolha reflete o Volume Financeiro Médio Diário (R$) e a posição indica o perfil de eficiência da ação.
+
+*Tabela de Risco e Retorno Ajustado:* Consolida as métricas numéricas de rentabilidade, volatilidade, Índice de Sharpe, Drawdown Máximo, Assimetria (Skewness), Curtose (Kurtosis), VaR 95% e Volume Diário.
 
 <br>
 
@@ -474,6 +560,10 @@ Inteligência quantitativa de ativos cotados em bolsa:
 
 * **Distribuição dos Retornos:** Histograma de frequência com boxplot marginal.
 
+*KPIs Estatísticos:* Exibem a Assimetria (viés de cauda), Curtose (espesura de cauda/risco de evento extremo), VaR 95% (Percentil 5%), Retorno Mínimo Diário e Retorno Máximo Diário.
+
+*Histograma com Boxplot Marginal:* Ilustra a frequência dos retornos percentuais diários com uma visualização de caixa no topo para identificação de mediana, intervalo interquartil (IQR) e outliers.
+
 <br>
 
 ![d3_3](./images/d3/d3_3_distribuicao_dos_retornos.png)
@@ -481,6 +571,10 @@ Inteligência quantitativa de ativos cotados em bolsa:
 <br>
 
 * **Drawdown:** Curva temporal de queda a partir do pico histórico.
+
+*Evolução do Drawdown no Tempo:* Gráfico percentual contínuo que mede a queda percentual do preço de um ativo em relação à sua máxima histórica anterior (Peak-to-Trough).
+
+*Ranking de Resiliência:* Tabela ordenada pelo menor Drawdown Máximo (em módulo), identificando os papéis mais defensivos contra quedas acentuadas de mercado.
 
 <br>
 
@@ -490,6 +584,8 @@ Inteligência quantitativa de ativos cotados em bolsa:
 
 * **Tendência (Média Móvel):** Fechamento acompanhado das médias simples SMA 21 e SMA 50.
 
+*Preço vs. Médias Móveis (SMA 21 / SMA 50):* Exibe a série temporal de preço de fechamento sobreposta pela Média Móvel Simples de 21 dias (curto prazo) e 50 dias (médio prazo) para identificação de tendências e pontos de cruzamento (Golden/Death Cross).
+
 <br>
 
 ![d3_5](./images/d3/d3_5_tendencia.png)
@@ -497,6 +593,24 @@ Inteligência quantitativa de ativos cotados em bolsa:
 <br>
 
 * **Dados & Metodologia:** Notificações técnicas e premissas de cálculo da taxa livre de risco.
+
+*Funcionamento dos Filtros Locais (Dashboard 3)*
+        
+        Os filtros no topo desta página aplicam refinamentos específicos em visualizações das abas de Mercado e Risco, operando dentro da seleção de empresas e janela temporal estabelecidas no **Filtro Global da Sidebar**.
+        
+        * **Destaque na Base 100:**
+          * **Escopo:** Afeta o gráfico *Rentabilidade Comparativa Normalizada* (Aba Rentabilidade).
+          * **Uso:** Destaca com traço espesso e cor diferenciada a curva temporal de um ativo específico ou da *Carteira Equiponderada*, suavizando as demais para facilitar a comparação visual.
+        * **Distribuição dos retornos (Histograma) / Ativo:**
+          * **Escopo:** Afeta os 5 KPIs de momentos estatísticos e o gráfico de *Distribuição dos Retornos Diários* (Aba Distribuição dos retornos).
+          * **Uso:** Alterna a análise entre a carteira consolidada ou a série de retornos de uma empresa individual.
+        * **Ativos no Drawdown:**
+          * **Escopo:** Afeta exclusivamente o gráfico temporal *Evolução do Drawdown no Tempo* (Aba Drawdown).
+          * **Uso:** Multiseletor que permite isolar e comparar as trajetórias de perda a partir do pico histórico das empresas selecionadas. A tabela *Ranking de Resiliência* permanece exibindo a totalidade dos ativos filtrados.
+        * **Ativo para Análise de Tendência (SMA):**
+          * **Escopo:** Afeta o gráfico *Preço vs. Médias Móveis* (Aba Tendência).
+          * **Uso:** Seleciona o ativo para exibição de suas cotações de fechamento diárias acompanhadas das médias móveis simples de 21 e 50 períodos.
+       
 
 <br>
 
@@ -511,6 +625,12 @@ Cruzamento analítico multidimensional unificando BACEN, CVM e B3:
 
 * **Visão Integrada:** Resumo executivo da carteira e gráfico multieixo macro-cambial.
 
+*KPIs da Tríade:* Consolidação executiva combinando a política monetária recente do BACEN com o faturamento e lucro corporativo das empresas listadas na B3.
+
+*Trajetória Conjunta Macro-Cambial:* Gráfico multieixo temporal correlacionando a Selic Meta (% a.a.), IPCA 12M (% a.a.) e o Dólar PTAX Venda (R$), permitindo acompanhar regimes de aperto monetário e desvalorização cambial.
+
+*Rentabilidade Comparativa Normalizada (Base 100):* Evolução contínua da carteira de ativos cotados na B3 indexada no ponto inicial.
+
 <br>
 
 ![d4_1](./images/d4/d4_1_visao_integrada.png)
@@ -518,6 +638,10 @@ Cruzamento analítico multidimensional unificando BACEN, CVM e B3:
 <br>
 
 * **Contabilidade e Mercado:** Lucro e ROE confrontados com o retorno em bolsa.
+
+*Lucro Líquido e ROE por Companhia:* Gráfico de barras duplas apresentando o resultado nominal (R$ Milhões) e a taxa de retorno sobre o patrimônio (% ROE) de cada empresa no exercício foco.
+
+*Eficiência Operacional (EBIT %) vs. Desempenho em Bolsa:* Dispersão relacionando a margem operacional das companhias com a rentabilidade de suas ações na bolsa.
 
 <br>
 
@@ -527,6 +651,10 @@ Cruzamento analítico multidimensional unificando BACEN, CVM e B3:
 
 * **Juros e Setores:** Retorno setorial cruzado com a Selic Média Anual.
 
+*Retorno Setorial em Bolsa vs. Taxa Selic Média Anual:* Confronta o desempenho das ações agrupadas por setor econômico com a taxa básica de juros média praticada pelo COPOM em cada ano.
+
+*Evolução Contábil durante o Ciclo da Selic:* Gráfico combinado correlacionando o índice de Despesa Financeira, Lucro Líquido, Alavancagem Média (Dívida Líquida / PL) e a Selic Média Anual.
+
 <br>
 
 ![d4_3](./images/d4/d4_3_juros_setores.png)
@@ -534,6 +662,10 @@ Cruzamento analítico multidimensional unificando BACEN, CVM e B3:
 <br>
 
 * **Câmbio e Exportadoras:** Análise de sensibilidade em cenários de estresse cambial.
+
+*Comportamento de Exportadoras em Estresse Cambial:* Compara o retorno diário médio das empresas exportadoras de commodities versus demais setores em dias classificados como dentro ou fora da janela de choque cambial.
+
+*Margem EBIT Anual vs. PTAX Média:* Avalia a evolução temporal da rentabilidade operacional dos setores produtores de commodities frente às oscilações da taxa média do Dólar.
 
 <br>
 
@@ -543,6 +675,12 @@ Cruzamento analítico multidimensional unificando BACEN, CVM e B3:
 
 * **Ranking Setorial:** Score multidimensional parametrizável por pesos de pilares.
 
+*Ranking Setorial Multidimensional:* Painel de barras horizontais empilhadas/ponderadas que classifica a saúde e atratividade dos setores industriais e financeiros através de 3 pilares parametrizáveis:
+
+- Pilar Retorno em Bolsa: Performance de valorização acionária.
+- Pilar Resiliência Macro: Capacidade de manutenção de margem em ciclos adversos de juros e inflação.
+- Pilar Solidez Contábil: Níveis de liquidez corrente e estrutura de endividamento.
+
 <br>
 
 ![d4_5](./images/d4/d4_5_ranking_setorial.png)
@@ -550,6 +688,26 @@ Cruzamento analítico multidimensional unificando BACEN, CVM e B3:
 <br>
 
 * **Dados & Metodologia:** Documentação consolidada das regras metodológicas integradas.
+
+*Funcionamento dos Filtros Locais (Dashboard 4)*
+        
+Os filtros no topo desta página orquestram as análises integradas cruzando dados do BACEN, CVM e B3, atuando dentro do recorte global estabelecido na Sidebar.
+        
+        * **Exercício Foco (KPIs & Contábil):**
+          * **Escopo:** Afeta exclusivamente os KPIs contábeis de topo (**Receita Consolidada** e **Lucro Consolidado**) e os dois gráficos da aba *Contabilidade e Mercado*.
+          * **Nota:** Os KPIs macroeconômicos (**Selic Meta Vigente** e **IPCA 12M Acumulado**) permanecem exibindo a leitura do ponto mais recente do período selecionado.
+        * **Modo Dispersão EBIT vs Retorno:**
+          * **Escopo:** Alterna a forma de cálculo e exibição nos gráficos da aba *Contabilidade e Mercado*.
+          * **Opções:** 
+            * **Ano de Foco:** Analisa a rentabilidade operacional (Margem EBIT) e o desempenho em bolsa restritos ao exercício ancorado.
+            * **Período Completo:** Plota a margem média histórica da empresa contra o retorno acumulado em toda a janela temporal filtrada.
+        * **Janela Estresse Cambial (Dias) & Limiar Alta PTAX (%):**
+          * **Escopo:** Alteram unicamente o gráfico *Comportamento de Exportadoras em Períodos de Estresse Cambial* (Aba Câmbio e Exportadoras).
+          * **Uso:** Parametrizam o algoritmo de identificação de choques cambiais, estabelecendo a janela mista de observação em dias úteis e o desvio percentual mínimo do Dólar PTAX para categorizar um período como "Estresse Cambial".
+        * **Pesos do Ranking Setorial (Bolsa, Resiliência Macro, Solidez Contábil):**
+          * **Escopo:** Alteram dinamicamente a ponderação dos pilares no gráfico *Ranking Setorial Multidimensional* (Aba Ranking Setorial).
+          * **Uso:** Permitem ao analista customizar o peso relativo ($0,00$ a $3,00$) atribuído à performance acionária, à resiliência frente aos ciclos monetários e aos indicadores de solvência contábil, recalculando instantaneamente o Score Final Consolidado e a ordenação dos setores.
+        
 
 <br>
 
