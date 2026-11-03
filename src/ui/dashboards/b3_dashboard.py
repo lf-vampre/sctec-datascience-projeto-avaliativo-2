@@ -21,6 +21,7 @@ from src.ui.components.alerts import aviso, aviso_nao_causalidade
 from src.ui.components.header import header
 from src.ui.components.kpi import kpi
 from src.ui.components.notes import nota_metodologica
+from src.ui.components.methodology import render_aba_dados_metodologia_b3
 from src.ui.data_loader import (
     DadosIndisponiveis,
     fonte_em_uso,
@@ -327,6 +328,7 @@ def render(filtros: Filtros) -> None:
         st.caption(f"Limitação de Volume: O volume financeiro diário é aproximado via fecho × quantidade (Yahoo Finance).")
         st.caption("Aviso de Desempenho: Rentabilidade passada não representa garantia de rentabilidade futura.")
         nota_metodologica("DM-02", titulo="Cálculo do Índice de Sharpe e Taxa Livre de Risco")
+        render_aba_dados_metodologia_b3()
 
     # Storytelling posicionada abaixo das abas
     df_sma_story = serie_sma(df_cotacoes, df_empresa, sel_sma_ticker) if sel_sma_ticker else None

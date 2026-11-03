@@ -20,6 +20,7 @@ from src.ui.components.alerts import aviso, aviso_financeiras, aviso_nao_causali
 from src.ui.components.header import header
 from src.ui.components.kpi import kpi
 from src.ui.components.notes import nota_metodologica
+from src.ui.components.methodology import render_aba_dados_metodologia_cvm
 from src.ui.data_loader import (
     DadosIndisponiveis,
     load_dim,
@@ -257,6 +258,7 @@ def render(filtros: Filtros) -> None:
             st.dataframe(df_painel_fin, use_container_width=True)
 
         #nota_metodologica("bancos", titulo="Tratamento Contábil de Instituições Financeiras")
+        render_aba_dados_metodologia_cvm()
 
     # Storytelling
     story = gerar_story_cvm(kpis, cresc, disp, solv_df, dist_set, limiar_liquidez=limiar_liq)

@@ -28,6 +28,7 @@ from src.ui.components.alerts import aviso, aviso_financeiras, aviso_nao_causali
 from src.ui.components.header import header
 from src.ui.components.kpi import kpi
 from src.ui.components.notes import nota_metodologica
+from src.ui.components.methodology import render_aba_dados_metodologia_integrado
 from src.ui.data_loader import (
     DadosIndisponiveis,
     load_dim,
@@ -286,6 +287,8 @@ def render(filtros: Filtros) -> None:
 
         #st.markdown("#### Base Integrada de Demonstrativos Processados")
         #st.dataframe(painel_cvm_base, use_container_width=True)
+
+        render_aba_dados_metodologia_integrado()
 
     # Storytelling
     story = gerar_story_integrada(kpis, t_aperto, t_setorial, df_est_ret, df_rank)
