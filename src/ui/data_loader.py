@@ -95,6 +95,10 @@ def ultima_atualizacao(tabela: Optional[str] = None) -> Optional[datetime]:
 def fonte_em_uso() -> str:
     """'neon' se a conexão responde; caso contrário 'parquet'."""
     try:
+        from src.utils import db
+
+        if not db.is_available():
+            return "parquet"
         st.connection("postgresql", type="sql").query("SELECT 1", ttl=0)
         return "neon"
     except Exception:
@@ -217,7 +221,10 @@ def _carregar(tabela: str, colunas: Tuple[str, ...], regras: List[Regra]) -> Car
     atualizado_em = ultima_atualizacao(tabela)
 
     try:
-        return Carga(_ler_neon(tabela, colunas, regras), "neon", atualizado_em)
+        from src.utils import db
+
+        if db.is_available():
+            return Carga(_ler_neon(tabela, colunas, regras), "neon", atualizado_em)
     except Exception:
         pass
 

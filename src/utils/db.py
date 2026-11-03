@@ -15,10 +15,15 @@ _ENGINE_CACHE: Dict[Tuple, Engine] = {}
 
 def _from_streamlit_secrets() -> Dict[str, Any]:
     """Lê [connections.postgresql] de st.secrets (Streamlit Cloud). Import tardio e tolerante."""
+    secrets_path = ROOT_DIR / ".streamlit" / "secrets.toml"
+    if not secrets_path.exists():
+        return {}
     try:
         import streamlit as st
 
-        return dict(st.secrets["connections"]["postgresql"])
+        if hasattr(st, "secrets") and "connections" in st.secrets:
+            return dict(st.secrets["connections"].get("postgresql", {}))
+        return {}
     except Exception:
         return {}
 
