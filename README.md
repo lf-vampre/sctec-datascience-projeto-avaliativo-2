@@ -433,17 +433,19 @@ Monitoramento das séries temporais oficiais do Banco Central do Brasil:
         
 Os filtros disponíveis no painel retrátil no topo deste dashboard atuam exclusivamente sobre os componentes visuais da visão **Inteligência Macroeconômica**. Não há impacto cruzado nos demais dashboards (CVM, B3 ou Integrado).
         
-        * **Defasagem Câmbio x Inflação (meses):**
-          * **Escopo:** Afeta unicamente o gráfico de *Dispersão: PTAX x IPCA 12M* (Aba Câmbio PTAX).
-          * **Uso:** Desloca a série temporal do IPCA 12M em $N$ meses no tempo para analisar o efeito de *pass-through* cambial (o tempo de resposta da inflação frente às variações do Dólar PTAX).
-        * **Modo da Correlação:**
-          * **Escopo:** Afeta a *Matriz de Correlação de Pearson* (Aba Correlações).
-          * **Opções:** 
-            * **Níveis:** Calcula a correlação estatística direta entre os valores absolutos observados das séries.
-            * **Variações:** Aplica a primeira diferença mensal ($\Delta = x_t - x_{t-1}$) para eliminar tendências de não-estacionariedade e avaliar a correlação entre as oscilações de curto prazo.
-        * **Indicadores no Heatmap:**
-          * **Escopo:** Afeta a *Matriz de Correlação de Pearson* (Aba Correlações).
-          * **Uso:** Multiseletor que permite filtrar dinamicamente quais variáveis macroeconômicas serão incluídas no mapa de calor.
+* **Defasagem Câmbio x Inflação (meses):**
+  * **Escopo:** Afeta unicamente o gráfico de *Dispersão: PTAX x IPCA 12M* (Aba Câmbio PTAX).
+  * **Uso:** Desloca a série temporal do IPCA 12M em $N$ meses no tempo para analisar o efeito de *pass-through* cambial (o tempo de resposta da inflação frente às variações do Dólar PTAX).
+
+* **Modo da Correlação:**
+  * **Escopo:** Afeta a *Matriz de Correlação de Pearson* (Aba Correlações).
+  * **Opções:** 
+    * **Níveis:** Calcula a correlação estatística direta entre os valores absolutos observados das séries.
+    * **Variações:** Aplica a primeira diferença mensal ($\Delta = x_t - x_{t-1}$) para eliminar tendências de não-estacionariedade e avaliar a correlação entre as oscilações de curto prazo.
+
+* **Indicadores no Heatmap:**
+  * **Escopo:** Afeta a *Matriz de Correlação de Pearson* (Aba Correlações).
+  * **Uso:** Multiseletor que permite filtrar dinamicamente quais variáveis macroeconômicas serão incluídas no mapa de calor.
        
 
 <br>
@@ -507,19 +509,21 @@ Diagnóstico de desempenho e solvência das companhias abertas:
 *Funcionamento dos Filtros Locais (Dashboard 2)*
 
         
-        Os filtros no topo desta página refinam as análises contábeis dentro do recorte temporal e corporativo definido pelo **Filtro Global da Sidebar**.
+Os filtros no topo desta página refinam as análises contábeis dentro do recorte temporal e corporativo definido pelo **Filtro Global da Sidebar**.
         
-        * **Exercício Foco (KPIs & Dispersão):**
-          * **Escopo:** Seleciona o ano de referência ancorado para os 4 KPIs consolidados do topo, o gráfico de *Distribuição Setorial da Receita Líquida* (Aba Visão Geral), a *Matriz Margem Líquida vs. ROE* (Aba Rentabilidade) e a análise de *Solvência e Liquidez* (Aba Solvência).
-          * **Uso:** Permite isolar um exercício contábil específico para comparações transversais entre empresas. As séries temporais de linha (como a *Evolução Temporal da Margem Líquida*) permanecem exibindo o período temporal completo definido na Sidebar.
-        * **Agrupamento EBIT:**
-          * **Escopo:** Afeta a distribuição dos boxplots de Margem EBIT na aba *Rentabilidade*.
-          * **Opções:** 
-            * **Setor Analítico:** Agrupa as companhias pelas categorias setoriais padronizadas do projeto (Consumo & Varejo/Serviços, Energia, Indústria & Bens de Capital, Materiais Básicos).
-            * **Commodities vs Serviços:** Reorganiza a visualização comparando empresas produtoras/exportadoras de commodities primárias contra empresas voltadas a serviços e mercado interno.
-        * **Limiar de Liquidez Corrente (x):**
-          * **Escopo:** Afeta o gráfico combinatório de solvência e a tabela de atenção na aba *Solvência*.
-          * **Uso:** Ajusta dinamicamente a linha tracejada horizontal de corte (ex: 1,50x) para sinalizar visualmente e filtrar companhias industriais que operam abaixo do patamar de liquidez desejado.
+* **Exercício Foco (KPIs & Dispersão):**
+  * **Escopo:** Seleciona o ano de referência ancorado para os 4 KPIs consolidados do topo, o gráfico de *Distribuição Setorial da Receita Líquida* (Aba Visão Geral), a *Matriz Margem Líquida vs. ROE* (Aba Rentabilidade) e a análise de *Solvência e Liquidez* (Aba Solvência).
+  * **Uso:** Permite isolar um exercício contábil específico para comparações transversais entre empresas. As séries temporais de linha (como a *Evolução Temporal da Margem Líquida*) permanecem exibindo o período temporal completo definido na Sidebar.
+
+* **Agrupamento EBIT:**
+  * **Escopo:** Afeta a distribuição dos boxplots de Margem EBIT na aba *Rentabilidade*.
+  * **Opções:** 
+    * **Setor Analítico:** Agrupa as companhias pelas categorias setoriais padronizadas do projeto (Consumo & Varejo/Serviços, Energia, Indústria & Bens de Capital, Materiais Básicos).
+    * **Commodities vs Serviços:** Reorganiza a visualização comparando empresas produtoras/exportadoras de commodities primárias contra empresas voltadas a serviços e mercado interno.
+
+* **Limiar de Liquidez Corrente (x):**
+  * **Escopo:** Afeta o gráfico combinatório de solvência e a tabela de atenção na aba *Solvência*.
+  * **Uso:** Ajusta dinamicamente a linha tracejada horizontal de corte (ex: 1,50x) para sinalizar visualmente e filtrar companhias industriais que operam abaixo do patamar de liquidez desejado.
         
 
 <br>
@@ -596,20 +600,23 @@ Inteligência quantitativa de ativos cotados em bolsa:
 
 *Funcionamento dos Filtros Locais (Dashboard 3)*
         
-        Os filtros no topo desta página aplicam refinamentos específicos em visualizações das abas de Mercado e Risco, operando dentro da seleção de empresas e janela temporal estabelecidas no **Filtro Global da Sidebar**.
+Os filtros no topo desta página aplicam refinamentos específicos em visualizações das abas de Mercado e Risco, operando dentro da seleção de empresas e janela temporal estabelecidas no **Filtro Global da Sidebar**.
         
-        * **Destaque na Base 100:**
-          * **Escopo:** Afeta o gráfico *Rentabilidade Comparativa Normalizada* (Aba Rentabilidade).
-          * **Uso:** Destaca com traço espesso e cor diferenciada a curva temporal de um ativo específico ou da *Carteira Equiponderada*, suavizando as demais para facilitar a comparação visual.
-        * **Distribuição dos retornos (Histograma) / Ativo:**
-          * **Escopo:** Afeta os 5 KPIs de momentos estatísticos e o gráfico de *Distribuição dos Retornos Diários* (Aba Distribuição dos retornos).
-          * **Uso:** Alterna a análise entre a carteira consolidada ou a série de retornos de uma empresa individual.
-        * **Ativos no Drawdown:**
-          * **Escopo:** Afeta exclusivamente o gráfico temporal *Evolução do Drawdown no Tempo* (Aba Drawdown).
-          * **Uso:** Multiseletor que permite isolar e comparar as trajetórias de perda a partir do pico histórico das empresas selecionadas. A tabela *Ranking de Resiliência* permanece exibindo a totalidade dos ativos filtrados.
-        * **Ativo para Análise de Tendência (SMA):**
-          * **Escopo:** Afeta o gráfico *Preço vs. Médias Móveis* (Aba Tendência).
-          * **Uso:** Seleciona o ativo para exibição de suas cotações de fechamento diárias acompanhadas das médias móveis simples de 21 e 50 períodos.
+* **Destaque na Base 100:**
+  * **Escopo:** Afeta o gráfico *Rentabilidade Comparativa Normalizada* (Aba Rentabilidade).
+  * **Uso:** Destaca com traço espesso e cor diferenciada a curva temporal de um ativo específico ou da *Carteira Equiponderada*, suavizando as demais para facilitar a comparação visual.
+
+* **Distribuição dos retornos (Histograma) / Ativo:**
+  * **Escopo:** Afeta os 5 KPIs de momentos estatísticos e o gráfico de *Distribuição dos Retornos Diários* (Aba Distribuição dos retornos).
+  * **Uso:** Alterna a análise entre a carteira consolidada ou a série de retornos de uma empresa individual.
+
+* **Ativos no Drawdown:**
+  * **Escopo:** Afeta exclusivamente o gráfico temporal *Evolução do Drawdown no Tempo* (Aba Drawdown).
+  * **Uso:** Multiseletor que permite isolar e comparar as trajetórias de perda a partir do pico histórico das empresas selecionadas. A tabela *Ranking de Resiliência* permanece exibindo a totalidade dos ativos filtrados.
+
+* **Ativo para Análise de Tendência (SMA):**
+  * **Escopo:** Afeta o gráfico *Preço vs. Médias Móveis* (Aba Tendência).
+  * **Uso:** Seleciona o ativo para exibição de suas cotações de fechamento diárias acompanhadas das médias móveis simples de 21 e 50 períodos.
        
 
 <br>
@@ -693,20 +700,23 @@ Cruzamento analítico multidimensional unificando BACEN, CVM e B3:
         
 Os filtros no topo desta página orquestram as análises integradas cruzando dados do BACEN, CVM e B3, atuando dentro do recorte global estabelecido na Sidebar.
         
-        * **Exercício Foco (KPIs & Contábil):**
-          * **Escopo:** Afeta exclusivamente os KPIs contábeis de topo (**Receita Consolidada** e **Lucro Consolidado**) e os dois gráficos da aba *Contabilidade e Mercado*.
-          * **Nota:** Os KPIs macroeconômicos (**Selic Meta Vigente** e **IPCA 12M Acumulado**) permanecem exibindo a leitura do ponto mais recente do período selecionado.
-        * **Modo Dispersão EBIT vs Retorno:**
-          * **Escopo:** Alterna a forma de cálculo e exibição nos gráficos da aba *Contabilidade e Mercado*.
-          * **Opções:** 
-            * **Ano de Foco:** Analisa a rentabilidade operacional (Margem EBIT) e o desempenho em bolsa restritos ao exercício ancorado.
-            * **Período Completo:** Plota a margem média histórica da empresa contra o retorno acumulado em toda a janela temporal filtrada.
-        * **Janela Estresse Cambial (Dias) & Limiar Alta PTAX (%):**
-          * **Escopo:** Alteram unicamente o gráfico *Comportamento de Exportadoras em Períodos de Estresse Cambial* (Aba Câmbio e Exportadoras).
-          * **Uso:** Parametrizam o algoritmo de identificação de choques cambiais, estabelecendo a janela mista de observação em dias úteis e o desvio percentual mínimo do Dólar PTAX para categorizar um período como "Estresse Cambial".
-        * **Pesos do Ranking Setorial (Bolsa, Resiliência Macro, Solidez Contábil):**
-          * **Escopo:** Alteram dinamicamente a ponderação dos pilares no gráfico *Ranking Setorial Multidimensional* (Aba Ranking Setorial).
-          * **Uso:** Permitem ao analista customizar o peso relativo ($0,00$ a $3,00$) atribuído à performance acionária, à resiliência frente aos ciclos monetários e aos indicadores de solvência contábil, recalculando instantaneamente o Score Final Consolidado e a ordenação dos setores.
+* **Exercício Foco (KPIs & Contábil):**
+  * **Escopo:** Afeta exclusivamente os KPIs contábeis de topo (**Receita Consolidada** e **Lucro Consolidado**) e os dois gráficos da aba *Contabilidade e Mercado*.
+  * **Nota:** Os KPIs macroeconômicos (**Selic Meta Vigente** e **IPCA 12M Acumulado**) permanecem exibindo a leitura do ponto mais recente do período selecionado.
+
+* **Modo Dispersão EBIT vs Retorno:**
+  * **Escopo:** Alterna a forma de cálculo e exibição nos gráficos da aba *Contabilidade e Mercado*.
+  * **Opções:** 
+    * **Ano de Foco:** Analisa a rentabilidade operacional (Margem EBIT) e o desempenho em bolsa restritos ao exercício ancorado.
+    * **Período Completo:** Plota a margem média histórica da empresa contra o retorno acumulado em toda a janela temporal filtrada.
+
+* **Janela Estresse Cambial (Dias) & Limiar Alta PTAX (%):**
+  * **Escopo:** Alteram unicamente o gráfico *Comportamento de Exportadoras em Períodos de Estresse Cambial* (Aba Câmbio e Exportadoras).
+  * **Uso:** Parametrizam o algoritmo de identificação de choques cambiais, estabelecendo a janela mista de observação em dias úteis e o desvio percentual mínimo do Dólar PTAX para categorizar um período como "Estresse Cambial".
+
+* **Pesos do Ranking Setorial (Bolsa, Resiliência Macro, Solidez Contábil):**
+  * **Escopo:** Alteram dinamicamente a ponderação dos pilares no gráfico *Ranking Setorial Multidimensional* (Aba Ranking Setorial).
+  * **Uso:** Permitem ao analista customizar o peso relativo ($0,00$ a $3,00$) atribuído à performance acionária, à resiliência frente aos ciclos monetários e aos indicadores de solvência contábil, recalculando instantaneamente o Score Final Consolidado e a ordenação dos setores.
         
 
 <br>
@@ -855,6 +865,10 @@ O planejamento e o acompanhamento de todas as entregas do projeto foram conduzid
 ## 14. Autoria e Créditos
 
 * **Desenvolvedor:** Luiz Felipe F V Vieira
+
+### Metodologia e Cálculos
+
+Na última aba de cada dashboard (**Dados & Metodologia**) contém todos os cálculos utilizados para criação dos indicadores.
 
 
 ### Referências Bibliográficas e Fontes Consultadas
