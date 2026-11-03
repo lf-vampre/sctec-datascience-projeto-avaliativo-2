@@ -20,6 +20,7 @@ from src.ui.components.alerts import aviso, aviso_financeiras, aviso_nao_causali
 from src.ui.components.header import header
 from src.ui.components.kpi import kpi
 from src.ui.components.notes import nota_metodologica
+from src.ui.components.methodology import render_aba_dados_metodologia_cvm
 from src.ui.data_loader import (
     DadosIndisponiveis,
     load_dim,
@@ -181,7 +182,18 @@ def render(filtros: Filtros) -> None:
         st.plotly_chart(fig_solvencia(solv_df, limiar_liquidez=limiar_liq), use_container_width=True)
         if not solv_df.empty:
             st.markdown("#### Empresas com Pontos de Atenção na Liquidez")
-            st.dataframe(solv_df[solv_df["atencao_liquidez"]], use_container_width=True, hide_index=True)
+            df_table_solv = solv_df.copy()
+            df_table_solv.rename(
+                columns={
+                    'ticker': 'Ticker', 
+                    'setor_analitico': 'Setor Analítico',
+                    'DIVIDA_LIQUIDA': 'Dívida Líquida',
+                    'LIQUIDEZ_CORRENTE': 'Liquidez Corrente',
+                    'atencao_liquidez': 'Atenção Liquidez',
+                    'caixa_liquido': 'Caixa Líquido',
+                }, inplace=True
+            )   
+            st.dataframe(df_table_solv[df_table_solv["Atenção Liquidez"]], use_container_width=True, hide_index=True)
 
     with tab4:
         if avisos_prep:
@@ -189,17 +201,64 @@ def render(filtros: Filtros) -> None:
             for av in avisos_prep:
                 st.caption(f"• {av}")
 
-        painel_ind = painel[painel["comparavel_receita"]].dropna(how="all", axis=1)
+        df_painel_ind = painel[painel["comparavel_receita"]].dropna(how="all", axis=1)
         st.markdown("#### Demonstrativos Financeiros Processados (Todos os setores, excluindo setor Financeiro)")
-        st.dataframe(painel_ind, use_container_width=True)
+        df_painel_ind = df_painel_ind.drop(columns=["sk_empresa", "tipo_plano", "comparavel_receita"], errors="ignore")
+        df_painel_ind['ano'] = df_painel_ind['ano'].astype(str)
+        cols_percentuais = ['CRESC_RECEITA', 'MARGEM_EBIT', 'MARGEM_LIQUIDA', 'ROE']
+        df_painel_ind[cols_percentuais] = (df_painel_ind[cols_percentuais] * 100).round(2)
+        df_painel_ind['LIQUIDEZ_CORRENTE'] = df_painel_ind['LIQUIDEZ_CORRENTE'].round(2)
+        df_painel_ind.rename(
+            columns={
+                'ticker': 'Ticker', 
+                'setor_analitico': 'Setor Analítico',
+                'exportadora_commodities': 'Exportadora de Commodities',
+                'ano': 'Ano',
+                'APLIC_FINANC': 'Aplicações Financeiras (R$)',
+                'ATIVO_CIRCULANTE': 'Ativo Circulante (R$)',
+                'CAIXA_EQUIV': 'Caixa e Equivalentes (R$)',
+                'CRESC_RECEITA': 'Crescimento da Receita (%)',
+                'DESP_FINANCEIRAS': 'Despesas Financeiras (R$)',
+                'DIVIDA_BRUTA': 'Dívida Bruta (R$)',
+                'DIVIDA_LIQUIDA': 'Dívida Líquida (R$)',
+                'EBIT': 'EBIT (Lucro Operacional R$)',
+                'EMPR_FIN_CP': 'Empréstimos (Curto Prazo R$)',
+                'EMPR_FIN_LP': 'Empréstimos (Longo Prazo R$)',
+                'LIQUIDEZ_CORRENTE': 'Liquidez Corrente',
+                'LUCRO_BRUTO': 'Lucro Bruto (R$)',
+                'LUCRO_LIQUIDO': 'Lucro Líquido (R$)',
+                'MARGEM_EBIT': 'Margem EBIT (%)',
+                'MARGEM_LIQUIDA': 'Margem Líquida (%)',
+                'PASSIVO_CIRCULANTE': 'Passivo Circulante (R$)',
+                'PATRIMONIO_LIQUIDO': 'Patrimônio Líquido (R$)',
+                'RECEITA_LIQUIDA': 'Receita Líquida (R$)',
+                'ROE': 'ROE (%)',
+            }, inplace=True
+        )   
+        st.dataframe(df_painel_ind, use_container_width=True)
 
-        painel_fin = painel[~painel["comparavel_receita"]].dropna(how="all", axis=1)
-        painel_fin = painel_fin.drop(columns=["exportadora_commodities", "comparavel_receita"], errors="ignore")
-        if not painel_fin.empty:
+        df_painel_fin = painel[~painel["comparavel_receita"]].dropna(how="all", axis=1)
+        df_painel_fin = df_painel_fin.drop(columns=["sk_empresa", "tipo_plano", "exportadora_commodities", "comparavel_receita"], errors="ignore")
+        df_painel_fin['ano'] = df_painel_fin['ano'].astype(str)
+        df_painel_fin['ROE'] = (df_painel_fin['ROE'] * 100).round(2)
+        df_painel_fin.rename(
+            columns={
+                'ticker': 'Ticker', 
+                'setor_analitico': 'Setor Analítico',
+                'ano': 'Ano',
+                'LUCRO_LIQUIDO': 'Lucro Líquido (R$)',
+                'PATRIMONIO_LIQUIDO': 'Patrimônio Líquido (R$)',
+                'RECEITA_INTERMEDIACAO': 'Receita Intermediação (R$)',
+                'ROE': 'ROE (%)',
+            }, inplace=True
+        )        
+
+        if not df_painel_fin.empty:
             st.markdown("#### Demonstrativos Financeiros Processados (Somente setor Financeiro)")
-            st.dataframe(painel_fin, use_container_width=True)
+            st.dataframe(df_painel_fin, use_container_width=True)
 
         #nota_metodologica("bancos", titulo="Tratamento Contábil de Instituições Financeiras")
+        render_aba_dados_metodologia_cvm()
 
     # Storytelling
     story = gerar_story_cvm(kpis, cresc, disp, solv_df, dist_set, limiar_liquidez=limiar_liq)

@@ -21,6 +21,7 @@ from src.ui.components.alerts import aviso, aviso_nao_causalidade
 from src.ui.components.header import header
 from src.ui.components.kpi import kpi
 from src.ui.components.notes import nota_metodologica
+from src.ui.components.methodology import render_aba_dados_metodologia_b3
 from src.ui.data_loader import (
     DadosIndisponiveis,
     fonte_em_uso,
@@ -205,6 +206,20 @@ def render(filtros: Filtros) -> None:
             else "N/A"
         )
 
+        df_exibir_rr.rename(
+            columns={
+                'ticker': 'Ticker',
+                'retorno_acumulado': 'Retorno Acumulado (%)',
+                'volatilidade_anualizada': 'Volatilidade Anualizada (%)',
+                'sharpe': 'Índice Sharpe',
+                'drawdown_maximo': 'Drawdown Máximo (%)',
+                'assimetria': 'Assimetria (Skewness)',
+                'curtose': 'Curtose (Kurtosis)',
+                'p5_retorno_diario': 'VaR 95% Diário (Percentil 5%)',
+                'volume_medio_diario': 'Volume Médio Diário',
+            }, inplace=True
+        )        
+
         st.dataframe(df_exibir_rr, use_container_width=True, hide_index=True)
 
     # Aba 3 — Distribuição dos Retornos
@@ -252,6 +267,16 @@ def render(filtros: Filtros) -> None:
             df_resil_fmt["sharpe"] = df_resil_fmt["sharpe"].apply(
                 lambda v: f"{v:.2f}".replace(".", ",") if pd.notna(v) else "—"
             )
+
+            df_resil_fmt.rename(
+                columns={
+                    'ticker': 'Ticker',
+                    'drawdown_maximo': 'Drawdown Máximo (%)',
+                    'volatilidade_anualizada': 'Volatilidade Anualizada (%)',
+                    'sharpe': 'Índice Sharpe',
+                }, inplace=True
+            )     
+
             st.dataframe(df_resil_fmt, use_container_width=True, hide_index=True)
 
     # Aba 5 — Tendência (SMA)
@@ -262,11 +287,48 @@ def render(filtros: Filtros) -> None:
     # Aba 6 — Dados & Metodologia
     with tab6:
         st.markdown("### Cotações Filtradas da Camada Ouro")
-        st.dataframe(df_cotacoes, use_container_width=True)
+        df_tabela_cotacoes = df_cotacoes.copy()
+
+        # Converter chave de tempo numérica (ex: 20190102) para datetime
+        df_tabela_cotacoes['sk_tempo'] = pd.to_datetime(df_tabela_cotacoes['sk_tempo'].astype(str), format='%Y%m%d').dt.strftime('%d/%m/%Y')
+
+        # Converter retorno diário para percentual (0.0111 -> 1.11%)
+        df_tabela_cotacoes['retorno_diario'] = df_tabela_cotacoes['retorno_diario'] * 100
+
+        # Arredondar colunas numéricas de preços e indicadores
+        colunas_preco = ['open', 'high', 'low', 'close', 'volume_fin_aprox', 'sma_21', 'sma_50']
+        df_tabela_cotacoes[colunas_preco] = df_tabela_cotacoes[colunas_preco].round(2)
+        df_tabela_cotacoes['retorno_diario'] = df_tabela_cotacoes['retorno_diario'].round(4)
+
+        # Cruzar com df_empresa para trazer ticker
+        df_tabela_cotacoes = df_tabela_cotacoes.merge(df_empresa[['sk_empresa', 'ticker']], on='sk_empresa', how='left')
+
+        # (Opcional) Reordenar colunas para colocar 'ticker' no início e remover sk_empresa
+        cols = ['sk_tempo', 'ticker', 'open', 'high', 'low', 'close', 'volume', 'volume_fin_aprox', 'retorno_diario', 'sma_21', 'sma_50']
+        df_tabela_cotacoes = df_tabela_cotacoes[cols]
+
+        df_tabela_cotacoes.rename(
+            columns={
+                'sk_tempo': 'Data',
+                'ticker': 'Ticker',
+                'open': 'Abertura (R$)',
+                'high': 'Máxima (R$)',
+                'low': 'Mínima (R$)',
+                'close': 'Fechamento (R$)',
+                'volume': 'Volume (Qtd Ações)',
+                'volume_fin_aprox': 'Volume Financeiro (R$)',
+                'retorno_diario': 'Retorno Diário (%)',
+                'sma_21': 'Média Móvel 21d',
+                'sma_50': 'Média Móvel 50d'
+            }, inplace=True
+        )
+
+        st.dataframe(df_tabela_cotacoes, use_container_width=True)
 
         st.caption(f"Limitação de Volume: O volume financeiro diário é aproximado via fecho × quantidade (Yahoo Finance).")
         st.caption("Aviso de Desempenho: Rentabilidade passada não representa garantia de rentabilidade futura.")
         nota_metodologica("DM-02", titulo="Cálculo do Índice de Sharpe e Taxa Livre de Risco")
+        render_aba_dados_metodologia_b3()
 
     # Storytelling posicionada abaixo das abas
     df_sma_story = serie_sma(df_cotacoes, df_empresa, sel_sma_ticker) if sel_sma_ticker else None

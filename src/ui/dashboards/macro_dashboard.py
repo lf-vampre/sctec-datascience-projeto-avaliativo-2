@@ -19,6 +19,7 @@ from src.ui.components.alerts import aviso, aviso_nao_causalidade
 from src.ui.components.header import header
 from src.ui.components.kpi import kpi
 from src.ui.components.notes import nota_metodologica
+from src.ui.components.methodology import render_aba_dados_metodologia_macro
 from src.ui.data_loader import (
     DadosIndisponiveis,
     fonte_em_uso,
@@ -161,8 +162,32 @@ def render(filtros: Filtros) -> None:
 
     with tab5:
         st.markdown("### Base de Dados Mensal Processada")
-        st.dataframe(painel, use_container_width=True)
+        df_tabela = painel.copy()
+
+        # Converter Juros Real ex-post de decimal para percentual (0.0262 -> 2.62%)
+        df_tabela['JURO_REAL_EXPOST'] = df_tabela['JURO_REAL_EXPOST'] * 100
+
+        #Arredondar casas decimais
+        df_tabela['PTAX_VENDA'] = df_tabela['PTAX_VENDA'].round(4)
+        df_tabela['IBC_BR_SA'] = df_tabela['IBC_BR_SA'].round(2)
+        df_tabela['JURO_REAL_EXPOST'] = df_tabela['JURO_REAL_EXPOST'].round(2)
+        df_tabela['POUPANCA'] = df_tabela['POUPANCA'].round(4)
+
+        df_tabela.rename(
+            columns={
+                'SELIC_META': 'Selic Meta (% a.a.)',
+                'SELIC_EFETIVA': 'Selic Efetiva (% a.a.)',
+                'IPCA_12M': 'IPCA 12M (% a.a.)',
+                'IPCA_MENSAL': 'IPCA Mensal (% a.m.)',
+                'PTAX_VENDA': 'PTAX (R$/USD)',
+                'IBC_BR_SA': 'IBC-Br (Pts)',
+                'JURO_REAL_EXPOST': 'Juros Real Ex-Post (% a.a.)',
+                'POUPANCA': 'Rend.Poupança (% a.m.)',
+                }, inplace=True
+            )   
+        st.dataframe(df_tabela, use_container_width=True)
         nota_metodologica("DM-01", titulo="Juro Real Ex-Post (Equação de Fisher)")
+        render_aba_dados_metodologia_macro()
 
     # Storytelling
     story = gerar_storytelling_macro(painel, kpis, jr_max)
@@ -171,7 +196,7 @@ def render(filtros: Filtros) -> None:
         st.markdown(f"**💡 Insight:** {story['insight']}")
         st.markdown(f"**🎯 Ação Recomendada:** {story['acao']}")
 
-    st.markdown("---")
+    #st.markdown("---")
     aviso_nao_causalidade()
 
     # Rodapé de status

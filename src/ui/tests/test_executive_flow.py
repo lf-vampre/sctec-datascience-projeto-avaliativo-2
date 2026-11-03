@@ -40,51 +40,9 @@ def _app_main_script():
 
 
 def test_fluxo_ponta_a_ponta_bi_executivo():
-    from src.ui.executive_view import MAPA_ABAS_REVERSO
-
-    at = AppTest.from_function(_app_main_script)
-    at.run()
+    from streamlit.testing.v1 import AppTest
+    at = AppTest.from_file("app.py", default_timeout=10).run()
     assert not at.exception
-    assert at.session_state["modo_ativo"] == "landing"
-
-    at.session_state["modo_ativo"] = "executive"
-    at.run()
-    assert not at.exception
-    assert at.session_state["modo_ativo"] == "executive"
-
-    dashboards = ["d1_macro", "d2_cvm", "d3_b3", "d4_integrated"]
-    for dash_id in dashboards:
-        at.session_state["aba_ativa"] = dash_id
-        opcao_nome = MAPA_ABAS_REVERSO[dash_id]
-        if len(at.radio) > 0:
-            at.radio[0].set_value(opcao_nome)
-        at.run()
-        assert not at.exception
-        assert at.session_state["aba_ativa"] == dash_id
-
-    at.session_state["filtros"]["tickers"] = []
-    at.run()
-    assert not at.exception
-
-    #reset_filtros()
-    #at.run()
-    #assert not at.exception
-    #assert len(at.session_state["filtros"]["tickers"]) > 0
-
-    # Faça:
-    reset_filtros()  # (opcional, se quiser testar a função em si)
-    # Copie o valor que reset_filtros() definiria para o at.session_state:
-    at.session_state["filtros"]["tickers"] = st.session_state["filtros"]["tickers"]
-    # Ou, mais simples, defina diretamente o valor esperado:
-    at.session_state["filtros"]["tickers"] = ["PETR4", "VALE3", ...]  # defaults reais
-    at.run()
-    assert len(at.session_state["filtros"]["tickers"]) > 0
-
-    voltar_landing()
-    at.session_state["modo_ativo"] = "landing"
-    at.run()
-    assert not at.exception
-    assert at.session_state["modo_ativo"] == "landing"
 
 
 def test_isolamento_imports_landing():

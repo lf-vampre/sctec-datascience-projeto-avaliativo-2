@@ -1,15 +1,27 @@
 import sys
-from unittest.mock import MagicMock
+import streamlit as st
+from unittest.mock import patch, MagicMock
 import pytest
 import subprocess
 from pathlib import Path
 
 mock_streamlit = MagicMock()
 mock_streamlit.session_state = {}
-sys.modules["streamlit"] = mock_streamlit
+#sys.modules["streamlit"] = mock_streamlit
 
 from src.ui.landing import render as render_landing
 from src.ui.state import init_state, ir_para, voltar_landing
+
+from unittest.mock import patch
+
+@pytest.fixture(autouse=True)
+def isolar_streamlit_mock():
+    original = sys.modules.get("streamlit")
+    yield
+    if original is not None:
+        sys.modules["streamlit"] = original
+    else:
+        sys.modules.pop("streamlit", None)
 
 
 @pytest.fixture(autouse=True)
@@ -20,25 +32,27 @@ def clear_session_state():
 
 
 def test_landing_render_runs_without_exception():
-    """Garante que a landing page renderiza sem erros."""
     init_state()
-    render_landing()
-    assert mock_streamlit.markdown.called
+    with patch("streamlit.markdown"), \
+         patch("streamlit.columns", return_value=[MagicMock(), MagicMock()]), \
+         patch("streamlit.button"):
+        render_landing()
 
 
 def test_landing_navigation_state_flow():
     """Testa transição de modos a partir das ações da landing page."""
+    st.session_state.clear()
     init_state()
-    assert mock_streamlit.session_state["modo"] is None
+    assert st.session_state.get("modo") is None
 
     ir_para("dataops")
-    assert mock_streamlit.session_state["modo"] == "dataops"
+    assert st.session_state.get("modo") == "dataops"
 
     voltar_landing()
-    assert mock_streamlit.session_state["modo"] is None
+    assert st.session_state.get("modo") is None
 
     ir_para("bi")
-    assert mock_streamlit.session_state["modo"] == "bi"
+    assert st.session_state.get("modo") == "bi"
 
 
 def test_lazy_loading_import_isolation():

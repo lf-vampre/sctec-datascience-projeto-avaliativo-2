@@ -10,10 +10,10 @@ from src.ui.data_loader import DadosIndisponiveis, neon_disponivel
 logger = logging.getLogger(__name__)
 
 MAPA_ABAS = {
-    "Dashboard 1 — Macro (BACEN)": "d1_macro",
-    "Dashboard 2 — Fundamentalista (CVM)": "d2_cvm",
-    "Dashboard 3 — Mercado e Risco (B3)": "d3_b3",
-    "Dashboard 4 — Visão Integrada (Tríade)": "d4_integrated",
+    "D1 — Macro (BACEN)": "d1_macro",
+    "D2 — Fundamentalista (CVM)": "d2_cvm",
+    "D3 — Mercado e Risco (B3)": "d3_b3",
+    "D4 — Visão Integrada (Tríade)": "d4_integrated",
 }
 
 MAPA_ABAS_REVERSO = {v: k for k, v in MAPA_ABAS.items()}

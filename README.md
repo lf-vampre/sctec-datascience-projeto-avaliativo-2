@@ -5,42 +5,54 @@
 
 # Plataforma Financeira Integrada (Tríade BACEN + B3 + CVM)
 
+<br>
+
+![app](./images/app_landing.png)
+
+<br>
+
 ## 1. Título e Resumo Executivo
 
 A **Plataforma Financeira Integrada** é uma solução Fullstack de Dados desenvolvida em Python e Streamlit que unifica dados macroeconômicos do Banco Central do Brasil (BACEN), cotações de mercado da B3 e demonstrações financeiras corporativas da Comissão de Valores Mobiliários (CVM).
 
-A aplicação resolve a fragmentação de fontes públicas isoladas, oferecendo uma visão integrada, auditável e padronizada para suporte a decisões de investimentos e análise macro-fundamentalista. A plataforma é dividida em dois modos independentes com carregamento sob demanda (*lazy loading*):
+A aplicação resolve a fragmentação de fontes públicas isoladas, oferecendo uma visão integrada, auditável e padronizada para suporte a decisões estratégicas de investimentos, controladoria e análise macro-fundamentalista. A plataforma é dividida em dois modos independentes com carregamento sob demanda (*lazy loading*):
 
-- **DataOps Control Tower:** Interface para orquestração, execução e monitoramento do pipeline de ETL (Ingestão de dados por API → Bronze → Prata → Ouro) com logs estruturados, estatísticas de saúde e Profiling (EDA).
-
-- **BI Executivo:** Painel interativo composto por 4 dashboards especializados (Macro, Fundamentalista, Mercado e Integrado) construídos sobre um modelo Star Schema.
+* **DataOps Control Tower:** Interface corporativa para orquestração, execução e monitoramento do pipeline de ETL (Ingestão de dados por API $\rightarrow$ Bronze $\rightarrow$ Prata $\rightarrow$ Ouro) com logs estruturados em tempo real, relatórios de saúde da base e profiling de Análise Exploratória de Dados (EDA).
+* **BI Executivo:** Painel interativo composto por 4 dashboards especializados (Macro, Fundamentalista, Mercado e Integrado) construídos sobre um modelo dimensional Star Schema otimizado.
 
 ---
 
-## 2. Contexto de Negócio e Pergunta Orientadora
-> 🚧 A preencher no Card 7 (Trello)
+## 2. Contexto de Negócio e Perguntas Orientadoras
+
+O cenário econômico corporativo exige que gestores, CFOs e analistas de investimentos analisem conjuntamente fatores macroeconômicos, dinâmicas de mercado de ações e demonstrativos contábeis. A **Linha Integrada (Tríade Financeira)** busca responder a quatro perguntas estratégicas centrais:
+
+1. **Impacto do Aperto Monetário:** De que maneira o ciclo de elevação da taxa Selic (de 2,00% para 13,75% a.a.) impactou a despesa financeira, o nível de alavancagem e o lucro líquido das companhias listadas?
+2. **Sensibilidade Setorial aos Juros e Inflação:** Como a elevação simultânea das taxas de juros e da inflação oficial (IPCA) afetou o desempenho em bolsa (B3) dos setores de consumo/varejo em comparação a energia, materiais básicos e instituições financeiras?
+3. **Proteção Cambial (*Hedge* Natural):** As empresas exportadoras de commodities apresentaram proteção de margens operacionais (EBIT) e valorização acionária em períodos de choque e estresse cambial (alta do Dólar PTAX)?
+4. **Resiliência e Solidez Setorial:** Qual setor econômico apresentou o melhor equilíbrio multidimensional entre resiliência macroeconômica, solidez contábil e retorno de mercado?
 
 ---
 
 ## 3. Fonte de Dados e Licença
 
-| Fonte | Tipo | Origem Oficial | URL Base | Séries / Relatórios / Tabelas | Período Selecionado | Método de Extração | Termos / Licença |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **BACEN SGS** | Oficial | Banco Central do Brasil | `https://api.bcb.gov.br/dados/serie/bcdata.sgs.{codigo}/dados` | Selic (432, 1178), IPCA (433, 13522), Câmbio (1), IBC-Br (24364), Poupança (196) | 2019-01-01 a 2023-12-31 | API REST JSON (SGS) | Dados Abertos Governamentais (Uso Público) |
-| **B3 (Yahoo Finance)** | Não Oficial | Yahoo Finance API | `yfinance.download()` | Cotações diárias (Open, High, Low, Close, Volume) | 2019-01-01 a 2024-01-01 | Python `yfinance` (v1.7+) | Termos de Serviço do Yahoo Finance (Uso Educacional/Pesquisa) |
-| **CVM DFP** | Oficial | CVM (Dados Abertos) | `https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/DFP/DADOS/` | `dfp_cia_aberta_{ano}.zip` (`DRE_con`, `BPA_con`, `BPP_con`) | 2019-01-01 a 2023-12-31 | Download HTTP ZIP + Parse CSV Stream | Dados Abertos CVM (Uso Público) |
-| **CVM Cadastro** | Oficial | CVM (Dados Abertos) | `https://dados.cvm.gov.br/dados/CIA_ABERTA/CAD/DADOS/cad_cia_aberta.csv` | `cad_cia_aberta.csv` | Atual | Download HTTP CSV (`cp1252`) | Dados Abertos CVM (Uso Público) |
+| Fonte | Tipo | Origem Oficial | URL Base / Endpoint | Séries / Relatórios | Período Selecionado | Método de Extração | Termos / Licença |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| **BACEN SGS** | Oficial | Banco Central do Brasil | `[https://api.bcb.gov.br/dados/serie/bcdata.sgs](https://api.bcb.gov.br/dados/serie/bcdata.sgs).{codigo}/dados` | Selic (432, 1178), IPCA (433, 13522), Câmbio (1), IBC-Br (24364), Poupança (196) | 2019-01-01 a 2023-12-31 | API REST JSON (SGS) | Dados Abertos Governamentais |
+| **B3 (Yahoo Finance)** | Não Oficial | Yahoo Finance API | `yfinance.download()` | Cotações diárias (Open, High, Low, Close, Volume) | 2019-01-01 a 2024-01-01 | Python `yfinance` (v1.7+) | Termos de Serviço Yahoo Finance |
+| **CVM DFP** | Oficial | CVM (Dados Abertos) | `[https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/DFP/DADOS/](https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/DFP/DADOS/)` | `dfp_cia_aberta_{ano}.zip` (`DRE_con`, `BPA_con`, `BPP_con`) | 2019-01-01 a 2023-12-31 | HTTP Stream + Parse CSV (`cp1252`) | Dados Abertos CVM |
+| **CVM Cadastro** | Oficial | CVM (Dados Abertos) | `[https://dados.cvm.gov.br/dados/CIA_ABERTA/CAD/DADOS/cad_cia_aberta.csv](https://dados.cvm.gov.br/dados/CIA_ABERTA/CAD/DADOS/cad_cia_aberta.csv)` | `cad_cia_aberta.csv` | Atual | HTTP CSV (`cp1252`) | Dados Abertos CVM |
 
-> **Nota sobre o Yahoo Finance (`yfinance`):** Trata-se de uma biblioteca não oficial mantida pela comunidade para raspagem/acesso à API pública do Yahoo Finance. Sujeita a limitações de *rate limit*, bloqueios de User-Agent e mudanças estruturais nos retornos sem aviso prévio.
+> **Nota sobre a integração YFinance:** O acesso às cotações diárias via biblioteca `yfinance` é realizado em caráter estritamente acadêmico e de pesquisa, operando sob mecanismos automatizados de *backoff* e tratamento de erros de conexão.
 
-### Por que baixar o `cad_cia_aberta.csv`?
+### Relevância do Cadastro Oficial CVM (`cad_cia_aberta.csv`)
 
-As demonstrações financeiras da CVM (DFPs) utilizam exclusivamente o código interno da CVM (`CD_CVM`) e o `CNPJ_CIA`. Nenhuma fonte oficial da CVM realiza a ponte direta entre o código de negociação em bolsa (**ticker da B3**, ex.: `PETR4`, `WEGE3`) e a companhia aberta.
+As demonstrações financeiras anuais (DFPs) disponibilizadas pela CVM utilizam exclusivamente o código de registro `CD_CVM` e o `CNPJ_CIA`. Nenhuma fonte contábil oficial realiza o cruzamento direto com os códigos de negociação em bolsa (**tickers da B3**, ex.: `PETR4`, `WEGE3`).
 
-A utilização do cadastro oficial (`cad_cia_aberta.csv`) permite:
-1. **Mapeamento Ticker → CD_CVM:** Confirmar a existência legal e o status do registro da companhia na CVM.
-2. **Obtenção de Metadados:** Prover dados cadastrais essenciais como CNPJ, Razão Social, Nome Comercial e Setor de Atividade para a tabela dimensional `dim_empresa`.
-3. **Filtragem Eficiente:** Filtrar os arquivos ZIP volumosos da CVM apenas para as companhias selecionadas no projeto, reduzindo drásticamente a utilização de RAM, volume de armazenamento local e escritas no banco de dados Neon.
+A ingestão prévia do arquivo `cad_cia_aberta.csv` cumpre três funções críticas no pipeline:
+
+1. **Mapeamento Ticker $\rightarrow$ CD_CVM:** Validação do registro ativo da companhia aberta perante a CVM.
+2. **Enriquecimento Cadastral:** Extração da Razão Social, Nome Comercial, CNPJ e Setor de Atividade para composição da dimensão `dim_empresa`.
+3. **Filtragem Eficiente:** Descarte imediato de dados não relacionados aos ativos selecionados durante o *parsing* dos arquivos ZIP volumosos da CVM, reduzindo o uso de memória RAM e volume de escrita.
 
 ---
 
@@ -48,550 +60,826 @@ A utilização do cadastro oficial (`cad_cia_aberta.csv`) permite:
 
 ### 4.1. Arquitetura da Camada Bronze
 
-A camada **Bronze** adota a Arquitetura Medalhão para ingestão e armazenamento de dados brutos (*raw layer*):
+A camada **Bronze** adota os princípios da Arquitetura Medalhão para ingestão e armazenamento de dados brutos (*raw layer*):
 
-* **BACEN**: Séries temporais de Selic Meta, Selic Efetiva, IPCA Mensal, IPCA 12M, PTAX Venda, Poupança e IBC-Br extraídas via API SGS.
-* **B3**: Cotações históricas diárias (OHLCV) via YFinance.
-* **CVM**: Demonstrativos contábeis anuais (DRE, BPA, BPP) via dados abertos CVM.
-
-- **Extratores Orientados a Objetos (POO):** Cada fonte possui sua classe especialista herdada de `BaseExtractor` (`BacenExtractor`, `B3Extractor`, `CvmExtractor`, `CadastroExtractor`).
-- **Preservação de Dados Crus:** Todos os dados são ingeridos na forma original (tipagem textual de segurança para CVM/Cadastro e estruturas originais do BACEN/B3), adicionando apenas metadados de governança (`_ingest_ts` e `_run_id`).
-- **Persistência Dupla:** Armazenamento local otimizado em arquivos `.parquet` particionados (`data/bronze/`) e espelhamento no banco relacional Neon.
-- **Mecanismo de TTL e assinatura de parâmetros:** evita chamadas redundantes às APIs reaproveitando o Bronze apenas quando está dentro da janela (`BRONZE_TTL_DAYS`) **e** foi gerado com os mesmos parâmetros (ver 4.5).
-- **Gestão Eficiente de Memória:** Coleta explicita de lixo (`gc.collect()`) e liberação de ponteiros de memória (`release()`) ao processar anos/arquivos volumosos.
-- **Limitações e inconsistências encontradas:** As Limitações Conhecidas e Observações das Extrações (Camada Bronze) estáo listadas no tópico *8. Discussão e Limitações da Análise*.
+* **Extratores Orientados a Objetos (POO):** Módulos especialistas herdados da classe abstrata `BaseExtractor` (`BacenExtractor`, `B3Extractor`, `CvmExtractor`, `CadastroExtractor`).
+* **Imutabilidade e Governança:** Os dados são salvos em formato bruto original, enriquecidos com metadados de controle (`_ingest_ts` para carimbo de data/hora e `_run_id` para identificação do ciclo de execução).
+* **Persistência Dupla:** Armazenamento em arquivos Parquet particionados (`data/bronze/`) e sincronização no banco relacional PostgreSQL (Neon).
+* **Reaproveitamento Inteligente de Cache:** Ingestão condicionada a um mecanismo de TTL (`BRONZE_TTL_DAYS`) e assinatura de parâmetros via arquivo `.meta.json`, evitando requisições redundantes.
 
 ### 4.2. Camada Prata (Tratamento, Higienização e Padronização)
 
-A camada Prata é responsável pelo tratamento de tipos, eliminação de duplicatas, padronização de nomenclatura, validação de integridade e mapeamento contábil padronizado.
+A camada **Prata** aplica regras de limpeza, coerção de tipos, eliminação de duplicatas e mapeamento contábil padronizado.
 
 #### Tratamentos por Fonte de Dados:
-* **BACEN (`BacenCleaner`)**:
-  * Parsing e padronização de datas (`YYYY-MM-DD`) e coerção de valores numéricos float.
-  * Mapeamento de códigos SGS para chaves de indicadores oficiais.
-  * Validação cruzada de consistência entre o IPCA 12M acumulado e a variação mensal composta dos últimos 12 meses (tolerância de 0.5 pp).
-  * Deduplicação por `(serie_codigo, data)` mantendo a última observação.
-  * Persistência particionada por `serie_codigo`.
 
-* **B3 (`B3Cleaner`)**:
-  * Padronização de tickers em caixa alta e remoção de espaços em branco.
-  * Descarte de registros com datas nulas, tickers ausentes ou preço de fechamento inválido ($\le 0$).
-  * Deduplicação estrita por `(ticker, data)`.
-  * Validação de consistência OHLC ($High \ge \max(Open, Close, Low)$ e $Low \le \min(Open, Close, High)$).
-  * Sinalização de anomalias na coluna `flag_qualidade`: `VOLUME_ZERO`, `VOLUME_NEGATIVO`, `OHLC_INVALIDO` e `RETORNO_EXTREMO` ($|\Delta\%| > 30\%$).
-  * Persistência particionada por `ticker`.
-
-* **CVM (`CvmCleaner` & `AccountMapper`)**:
-  * Consolidação das tabelas DRE, BPA e BPP.
-  * Ajuste de escala de moeda: conversão automática de valores declarados em milhares (`ESCALA_MOEDA == 'MIL'`) multiplicando por 1.000 para refletir valores absolutos em R$.
-  * Retenção de versão: ordenação por `VERSAO` e desduplicação por `(cd_cvm, demonstrativo, cd_conta, dt_fim_exerc)`, garantindo o uso exclusivo da última versão retificada enviada à CVM.
-  * Identificação e auditoria de reapresentações financeiras entre o exercício `ÚLTIMO` e o comparativo `PENÚLTIMO`.
-  * **Mapeamento de Contas (`AccountMapper`)**:
-    * Para empresas do plano **Industrial/Comercial**: Mapeamento direto por `cd_conta`, `demonstrativo` e `st_conta_fixa == 'S'`.
-    * Para empresas do plano **Financeiro/Bancário**: Mapeamento restringido por `cd_conta` fixo (`2.03` para Patrimônio Líquido, `3.01` para Receitas da Intermediação e `3.11` para Lucro Líquido) combinado com verificação de palavras-chave em `ds_conta`, eliminando ambiguidades entre contas sintéticas e analíticas.
-  * Persistência particionada por `cd_cvm` e `ano`.
+* **BACEN (`BacenCleaner`):** Parsing de datas em formato ISO (`YYYY-MM-DD`), conversão de valores numéricos, deduplicação por `(serie_codigo, data)` e validação de tolerância de consistência temporal.
+* **B3 (`B3Cleaner`):** Higienização de tickers, filtro de preços zerados ou inválidos ($\le 0$), ordenação temporal, deduplicação por `(ticker, data)` e auditoria de consistência OHLC ($High \ge \max(Open, Close)$ e $Low \le \min(Open, Close)$).
+* **CVM (`CvmCleaner` & `AccountMapper`):** Consolidação das tabelas DRE, BPA e BPP. Aplicação da escala monetária (multiplicação por $1.000$ quando informado `ESCALA_MOEDA == 'MIL'`) e ordenação por `VERSAO` para retenção exclusiva do demonstrativo retificado mais recente.
+* **Segregação Contábil:** O componente `AccountMapper` diferencia empresas industriais/comerciais de instituições financeiras (Plano COSIF). Bancos possuem contas de intermediação financeira mapeadas de forma isolada e têm métricas industriais (Margem EBIT, Liquidez Corrente, Dívida Líquida) tratadas como nulas para evitar distorções agregadas.
 
 
-  #### Tabela de Inconsistências e Tratamentos Aplicados (Logs de Produção)
 
-| Fonte | Problema Encontrado | Tratamento Aplicado | Quantidade Afetada |
-| :--- | :--- | :--- | :--- |
-| **CVM** | Múltiplas versões de demonstrativos enviados pelas empresas (retificadoras) | Ordenação por `VERSAO` e retenção apenas do último registro por `(cd_cvm, demonstrativo, cd_conta, dt_fim_exerc)` | 9.798 linhas descartadas |
-| **CVM** | Divergência de valores comparativos em relatórios reapresentados (`ÚLTIMO` vs `PENÚLTIMO`) | Mapeamento auditado; mantido o valor do demonstrativo mais recente com registro em log | 629 contas com alteração |
-| **CVM / AccountMapper** | Ambiguidade de nomes em contas do BPP para instituições financeiras (ex: Bradesco e BB) | Restrição do mapeamento por `cd_conta` fixo em `FINANCIAL_ACCOUNTS` | Eliminadas duplicidades nos CVM 906 e 1023 |
-| **B3** | Cotações com volume de negociação nulo em dias sem liquidez | Registro mantido na Prata com sinalização de alerta na coluna `flag_qualidade` | 8 linhas (`VOLUME_ZERO`) |
-| **B3** | Variações atípicas de preço intra-dia ($> 30\%$) por grupamentos ou eventos de mercado | Manutenção dos dados originais e sinalização com flag de qualidade | 3 linhas (`RETORNO_EXTREMO`) |
-| **B3** | Tickers ausentes na extração da camada Bronze (`EMBR3` e `JBSS3`) | Mapeamento de cobertura com emissão de alerta no relatório de execução | 2 tickers não localizados |
-| **BACEN** | Divergência no IPCA acumulado 12M composto vs reportado | Verificação de tolerância de 0,5 pp | 0 incoerências fora da tolerância |
+#### Auditoria de Inconsistências Tratadas (Logs de Pipeline)
+
+| Fonte | Inconsistência Identificada | Tratamento Aplicado no Pipeline | Impacto Auditado |
+| --- | --- | --- | --- |
+| **CVM** | Múltiplas versões de demonstrativos anuais retificadores | Ordenação por `VERSAO` mantendo apenas a versão final por `(cd_cvm, demonstrativo, cd_conta, dt_fim_exerc)` | 9.798 registros desduplicados |
+| **CVM** | Divergência de valores entre o exercício atual (`ÚLTIMO`) e a reapresentação (`PENÚLTIMO`) | Mapeamento auditado retendo os valores da demonstração retificada mais recente | 629 contas atualizadas |
+| **CVM / Bancos** | Conflito de códigos contábeis em instituições do setor financeiro | Restrição do mapeamento contábil por plano COSIF e palavras-chave específicas | Duplicidades eliminadas |
+| **B3** | Cotações diárias com volume negociado nulo em dias de baixa liquidez | Manutenção da cotação com sinalização de alerta na flag de qualidade (`VOLUME_ZERO`) | 8 observações sinalizadas |
+| **B3** | Oscilações extremas intra-dia ($> 30\%$) por proventos ou grupamentos | Preservação dos dados originais e adição de flag de auditoria (`RETORNO_EXTREMO`) | 3 observações sinalizadas |
 
 ### 4.3. Camada Ouro (Star Schema)
 
-A camada Ouro modela os dados consolidados das camadas Bronze e Prata em um esquema estrela (*Star Schema*) altamente otimizado para consultas analíticas e relatórios operacionais.
+A camada **Ouro** estrutura os dados limpos em um modelo estelar (*Star Schema*), otimizado para consultas analíticas de alta performance no aplicativo.
 
-#### Arquitetura e Modelagem
-- **Dimensões**:
-  - `dim_tempo`: Cobertura diária contínua (1.827 linhas).
-  - `dim_empresa`: Cadastro unificado das empresas do universo do projeto (19 linhas).
-  - `dim_indicador`: Catálogo estático de métricas brutas e derivadas (32 linhas).
-- **Fatos**:
-  - `fato_macro`: Séries temporais macroeconômicas do BACEN e métricas derivadas como `JURO_REAL_EXPOST` via equação de Fisher (4.636 linhas).
-  - `fato_cotacoes`: Séries de preços e volumes da B3 enriquecidas com retorno diário e médias móveis simples SMA_21 e SMA_50 (21.097 linhas).
-  - `fato_demonstrativos`: Mapeamento unificado de demonstrações contábeis DFP/ITR da CVM e métricas fundamentalistas derivadas (916 linhas).
+```
+                  ┌──────────────────┐
+                  │    dim_tempo     │
+                  └────────┬─────────┘
+                           │
+        ┌──────────────────┼──────────────────┐
+        │                  │                  │
+┌───────┴────────┐ ┌───────┴────────┐ ┌───────┴──────────────┐
+│   fato_macro   │ │ fato_cotacoes  │ │ fato_demonstrativos  │
+└───────┬────────┘ └───────┬────────┘ └───────┬──────────────┘
+        │                  │                  │              │
+        │                  └─────────┬────────┘              │
+        │                            │                       │
+        │                   ┌────────┴─────────┐             │
+        │                   │   dim_empresa    │             │
+        │                   └──────────────────┘             │
+        │                                                    │
+        └────────────────────────────┬───────────────────────┘
+                                     │
+                            ┌────────┴─────────┐
+                            │  dim_indicador   │
+                            └──────────────────┘
 
-#### Persistência Dupla e Resiliência
-- **Escrita Simultânea**: Os dados da Ouro são persistidos em formato Parquet comprimido com `zstd` em `data/gold/` e sincronizados via `upsert` relacional no PostgreSQL (Neon).
-- **Fallback de Leitura**: Se o banco de dados Neon apresentar indisponibilidade, o pipeline realiza *fallback* automático para os arquivos Parquet locais.
-- **Manifesto de Auditoria**: Todas as operações gravam metadados em `data/gold/_manifest.json` para validação de integridade.
+```
 
+#### Estrutura Dimensional:
+
+* **Dimensões:** `dim_tempo` (cobertura diária contínua), `dim_empresa` (cadastro corporativo com setor analítico e tipo de plano) e `dim_indicador` (catálogo de variáveis brutas e derivadas).
+* **Tabelas Fato:** `fato_macro` (indicadores BACEN e Juro Real Ex-Post), `fato_cotacoes` (preços, retornos e médias móveis B3) e `fato_demonstrativos` (balanços e DREs CVM).
+* **Persistência e Fallback:** Operação simultânea com gravação Parquet comprimido (`zstd`) em `data/gold/` e sincronização por `upsert` no PostgreSQL (Neon). Em caso de indisponibilidade de rede, o aplicativo realiza *fallback* automático para os arquivos Parquet locais.
 
 ### 4.4. Qualidade, Testes e Validação por Amostragem
 
-#### Testes Automatizados (Pytest)
-A integridade da camada Ouro é garantida por uma suíte de testes unitários e de integração cobrindo regras de negócio, tabelas fato e dimensões:
+A integridade do pipeline é auditada por uma suíte de testes unitários e de integração (`pytest src/etl/tests/test_gold.py`), atingindo **100% de aprovação (21/21 testes)** em chaves primárias, regras relacionais e cálculos derivados.
 
-```bash
-pytest src/etl/tests/test_gold.py
+Adicionalmente, o script de auditoria pontual (`scripts/check_gold_sampling.py`) confrontou as métricas salvas no repositório contra dados públicos oficiais:
 
-```
-
-* **Resultado**: 21/21 testes aprovados (cobertura de construções de dimensões, cálculos de indicadores derivados, integridade relacional e idempotência).
-
-#### Validação por Amostragem (Fontes Públicas Oficiais)
-
-Script de auditoria pontual (`scripts/check_gold_sampling.py`) confrontando os dados persistidos na camada Ouro contra dados públicos oficiais do BACEN e DFP/CVM:
-
-```bash
-python scripts/check_gold_sampling.py
-
-```
-
-##### Resultado da Auditoria de Amostragem
-
-| Domínio | Indicador / Empresa | Data / Exercício | Valor Ouro | Fonte Oficial | Diferença | Status |
+| Domínio | Indicador / Companhia | Data / Exercício | Valor no Banco (Ouro) | Fonte Oficial Publicada | Variação | Auditoria |
 | --- | --- | --- | --- | --- | --- | --- |
-| **BACEN** | Selic Meta (SGS 432) | 28/12/2023 | 11,75% a.a. | 11,75% a.a. | 0,00% | **BATIDO (100%)** |
-| **BACEN** | IPCA 12M (SGS 13522) | 01/12/2023 | 4,62% a.a. | 4,62% a.a. | 0,00% | **BATIDO (100%)** |
-| **CVM** | WEGE3 (Receita Líquida) | DFP 2023 | R$ 32.503.601.000,00 | R$ 32.840.981.000,00 | < 1,1% | **VALIDADO (Residual)** |
-| **CVM** | WEGE3 (Lucro Líquido) | DFP 2023 | R$ 5.867.615.000,00 | R$ 5.732.036.000,00 | < 2,4% | **VALIDADO (Residual)** |
+| **BACEN** | Selic Meta (SGS 432) | 28/12/2023 | 11,75% a.a. | 11,75% a.a. | 0,00% | **Confirmado (100%)** |
+| **BACEN** | IPCA 12M (SGS 13522) | 01/12/2023 | 4,62% a.a. | 4,62% a.a. | 0,00% | **Confirmado (100%)** |
+| **CVM** | WEGE3 (Receita Líquida) | DFP 2023 | R$ 32.503.601.000,00 | R$ 32.840.981.000,00 | < 1,1% | **Validado (Residual)** |
+| **CVM** | WEGE3 (Lucro Líquido) | DFP 2023 | R$ 5.867.615.000,00 | R$ 5.732.036.000,00 | < 2,4% | **Validado (Residual)** |
 
-
-### 4.5. DataOps On-Demand 
+### 4.5. DataOps On-Demand e Profiling Estatístico (EDA)
 
 #### 4.5.1. Orquestração do Pipeline
 
-O **DataOps Control Tower** executa o pipeline completo (Bronze → Prata → Ouro) a partir da interface. Nada é carregado na abertura do app: a landing page não importa ETL, banco ou gráficos, e o módulo só é carregado quando o usuário escolhe o modo DataOps.
+O **DataOps Control Tower** possibilita a execução do pipeline de dados sob demanda diretamente pela interface Streamlit.
 
-##### Fluxo de uso
-1. **Landing → DataOps:** o usuário escolhe o modo na landing page.
-2. **Autenticação (opcional):** sem senha, a execução roda em **Sandbox**. Com a senha configurada em `dataops_password` (secrets), roda em **Produção**. A comparação é feita em tempo constante (`hmac.compare_digest`) e a senha não é guardada no estado da sessão.
-3. **Parâmetros:** seleção de tickers do universo, período do BACEN, período da B3 (data final exclusiva no `yfinance`) e anos de exercício da CVM, com validação de datas e botão para restaurar o período padrão.
-4. **Execução:** o pipeline roda de forma contínua, na ordem das 12 etapas abaixo, e **interrompe na primeira falha**.
-5. **Resultado:** logs, relatório de saúde da Ouro e avisos de falha ficam na tela até o usuário voltar aos parâmetros.
+* **Segregação de Ambientes:** Operação em modo **Sandbox** (requisições reais com gravação isolada em `data/_sandbox/` para testes sem alteração do banco produtivo) ou modo **Produção** (autenticado por senha com atualização de banco e persistência na Ouro).
+* **Logs Estruturados:** Emissão contínua de eventos com nível, camada, módulo e mensagem, mantendo histórico em memória e filtros na interface.
+* **Gestão de Memória:** Execução de `gc.collect()` e desalocação de objetos pesados ao término de cada fase do pipeline.
 
-| Camada | Etapas (em ordem) |
-| :--- | :--- |
-| Bronze | `cadastro.bronze` → `bacen.bronze` → `b3.bronze` → `cvm.bronze` |
-| Prata | `cadastro.silver` → `bacen.silver` → `b3.silver` → `cvm.silver` |
-| Ouro | `dims` → `bacen.gold` → `b3.gold` → `cvm.gold` |
+#### 4.5.2. Análise Exploratória de Dados (EDA)
 
-Cada etapa só roda se o pré-requisito foi concluído nesta sessão ou já existe no destino da camada anterior.
+A suíte de profiling estatístico (`DataProfiler`) realiza o diagnóstico de qualidade da camada Prata em modo somente leitura:
 
-##### Modos de execução
-
-| | Sandbox (sem senha) | Produção (com senha) |
-| :--- | :--- | :--- |
-| Requisições às APIs | Reais | Reais |
-| Gravação em arquivo | `data/_sandbox/` | `data/{camada}/` (Ouro em `data/gold/`) |
-| Gravação no Neon | Não | Sim (upsert transacional) |
-| Limite de tickers | Sim (`SANDBOX_MAX_TICKERS`) | Não |
-| Impacto no BI | Nenhum: o BI nunca lê `data/_sandbox/` | Atualiza a Ouro lida pelos dashboards |
-
-Isso permite expor o DataOps em um app público sem que um visitante altere a base usada pelos dashboards. O modo Sandbox apenas para demonstrar o fluxo real do pipeline de dados.
-
-##### Logs e progresso
-- **Logs em tempo real:** cada evento traz data/hora, nível, camada, fonte (classe responsável), etapa e mensagem. Exemplo: `[Bronze - CadastroExtractor]`.
-- **Filtros:** por fonte e por nível (`INFO`, `WARNING`, `ERROR`).
-- **Limite em memória:** apenas os últimos 500 eventos são mantidos na sessão.
-- **Falhas visíveis:** a etapa com erro é destacada na tela com a mensagem retornada, sem exibir stacktrace.
-
-##### Reaproveitamento do Bronze
-Antes de baixar dados, cada extrator verifica se o Bronze existente pode ser reutilizado. O reuso exige **as duas condições**:
-- arquivo dentro do TTL (`BRONZE_TTL_DAYS`);
-- **parâmetros idênticos** aos da carga que o gerou (tickers, períodos, anos, séries), registrados em um arquivo `.meta.json` ao lado de cada Parquet.
-
-Se qualquer parâmetro mudar, o Bronze é extraído novamente (requisição a API) e o log informa o motivo. O Bronze funciona como *snapshot* do último run, sem acumular tickers de execuções anteriores.
-
-##### Gestão de memória
-- **Por etapa:** o orquestrador libera objetos e executa `gc.collect()` ao final de cada etapa, inclusive em caso de erro.
-- **Ao fim do pipeline:** limpeza automática do cache de dados (`st.cache_data.clear()`), remoção dos handlers de log e descarte do orquestrador. Apenas o resumo das etapas e os logs (texto) permanecem na sessão para consulta.
-- **Reiniciar:** o botão "Voltar aos Parâmetros" descarta também o resumo e os logs.
-
-##### Relatório de saúde da Ouro
-Ao final da execução, o DataOps exibe para cada tabela da Ouro:
-- linhas no Parquet e no Neon (`COUNT`, sem carregar os dados);
-- fonte ativa da leitura (Neon, Parquet de fallback ou sandbox);
-- **divergência**, quando Neon, Parquet e `_manifest.json` não concordam. A divergência é uma **informação**, não um erro.
-
-
-#### 4.5.2 Análise Exploratória de Dados (EDA) e Qualidade dos Dados
-
-A camada Prata é submetida a profiling estatístico e diagnóstico de qualidade via classe `DataProfiler` (`src/etl/eda/profiler.py`). A EDA opera sob a regra de **somente leitura** e é executada sob demanda no DataOps Control Tower, comprova a eficácia das limpezas e sinaliza anomalias estruturais.
-
-* **Deduplicação Comprovada:** 0 duplicatas nas chaves naturais `(codigo_sgs, data)` no BACEN, `(ticker, data)` na B3, `(cd_cvm, dt_fim_exerc, cd_conta)` na CVM e `(cd_cvm)` no Cadastro.
-* **Integridade das Séries Temporais:** Cobertura de 1.250 pregões na B3 (2019-2023) por ticker e séries sem lacunas no BACEN (SGS 432, 1178, 433, 13522, 1, 24364, 196).
-* **Diagnóstico de Outliers e Normalidade:** Identificação de picos de variação no IPCA (SGS 433) em 2021-2022 via IQR/MAD robusto e rejeição de normalidade nos retornos diários da B3 via estatística de Jarque-Bera ($p < 0,05$).
-* **Nulos Estruturais Contábeis:** Confirmação da ausência de Margem EBIT, Liquidez Corrente e Dívida Líquida em bancos (ITUB4, BBDC4, BBAS3, SANB11).
-
-
-
-> 🚧 Prints do DataOps (formulário, execução com logs e relatório de saúde) a incluir na Seção 10 (Card 11).
-
+* **Integridade Cadastral e Temporal:** Confirmação de 0 duplicatas nas chaves naturais e verificação de continuidade temporal sem lacunas.
+* **Diagnóstico de Outliers:** Identificação de picos de inflação nos biênios críticos e verificação da assimetria dos retornos diários acionários.
 
 ---
 
 ## 5. Dicionário de Dados (Camada Ouro)
 
+### `dim_tempo` (Dimensão Calendário)
 
-### `dim_tempo` (Dimensão de Tempo)
-| Coluna | Tipo | Descrição / Regra de Negócio |
-| :--- | :--- | :--- |
+| Coluna | Tipo | Descrição Financeira / Regra de Negócio |
+| --- | --- | --- |
 | `sk_tempo` | `INTEGER` | Chave primária substituta no formato YYYYMMDD. |
-| `data` | `DATE` | Data calendário. |
-| `ano` | `INTEGER` | Ano de referência (ex: 2023). |
-| `semestre` | `INTEGER` | Semestre do ano (1 ou 2). |
-| `trimestre` | `INTEGER` | Trimestre do ano (1 a 4). |
-| `mes` | `INTEGER` | Mês do ano (1 a 12). |
-| `ano_mes` | `VARCHAR` | Formato 'YYYY-MM' para agregação mensal. |
-| `dia_util_b3` | `BOOLEAN` | Flag indicando se houve pregão na B3. |
+| `data` | `DATE` | Data civil do registro. |
+| `ano` | `INTEGER` | Ano civil de referência (ex: 2023). |
+| `semestre` | `INTEGER` | Semestre civil (1 ou 2). |
+| `trimestre` | `INTEGER` | Trimestre civil (1 a 4). |
+| `mes` | `INTEGER` | Mês civil (1 a 12). |
+| `ano_mes` | `VARCHAR` | Agregador mensal no formato 'YYYY-MM'. |
+| `dia_util_b3` | `BOOLEAN` | Indicador de pregão ativo na B3. |
 
-### `dim_empresa` (Dimensão de Empresas)
-| Coluna | Tipo | Descrição / Regra de Negócio |
-| :--- | :--- | :--- |
+### `dim_empresa` (Dimensão Companhias Aberta)
+
+| Coluna | Tipo | Descrição Financeira / Regra de Negócio |
+| --- | --- | --- |
 | `sk_empresa` | `INTEGER` | Chave substituta (código CVM da empresa). |
 | `ticker` | `VARCHAR` | Código do ativo negociado na B3 (ex: WEGE3, ITUB4). |
-| `cd_cvm` | `INTEGER` | Código de registro da empresa na CVM. |
-| `cnpj` | `VARCHAR` | CNPJ da empresa. |
-| `denom_cia` | `VARCHAR` | Razão social / Denominação social oficial. |
+| `cd_cvm` | `INTEGER` | Código oficial de registro na CVM. |
+| `cnpj` | `VARCHAR` | CNPJ da companhia aberta. |
+| `denom_cia` | `VARCHAR` | Razão social oficial da empresa. |
 | `setor_cvm` | `VARCHAR` | Setor de atividade cadastrado na CVM. |
-| `setor_analitico` | `VARCHAR` | Setor analítico unificado do projeto. |
-| `tipo_plano` | `VARCHAR` | Tipo de plano contábil ('industrial' ou 'financeira'). |
-| `exportadora_commodities` | `BOOLEAN` | Flag de empresa exportadora de commodities. |
-| `tem_cvm` | `BOOLEAN` | Flag indicando presença de dados na CVM. |
-| `tem_b3` | `BOOLEAN` | Flag indicando presença de cotações na B3. |
+| `setor_analitico` | `VARCHAR` | Setor analítico padronizado do projeto. |
+| `tipo_plano` | `VARCHAR` | Plano contábil ('industrial' ou 'financeira'). |
+| `exportadora_commodities` | `BOOLEAN` | Flag de empresa exportadora primária. |
+| `tem_cvm` | `BOOLEAN` | Indicador de presença nos relatórios DFP da CVM. |
+| `tem_b3` | `BOOLEAN` | Indicador de cotações ativas na B3. |
 
-### `dim_indicador` (Dimensão de Indicadores)
-| Coluna | Tipo | Descrição / Regra de Negócio |
-| :--- | :--- | :--- |
-| `sk_indicador` | `INTEGER` | Chave primária substituta do indicador. |
-| `codigo` | `VARCHAR` | Código textual único do indicador (ex: SELIC_META, ROE). |
-| `nome` | `VARCHAR` | Nome descritivo completo. |
-| `fonte` | `VARCHAR` | Origem da informação ('BACEN', 'CVM', 'B3'). |
-| `tipo` | `VARCHAR` | Tipo do indicador ('bruto' ou 'derivado'). |
-| `unidade` | `VARCHAR` | Unidade de medida ('R$', 'fração', '% a.a.', '%', 'Razão', 'Índice'). |
-| `granularidade` | `VARCHAR` | Frequência nativa ('diária', 'mensal', 'anual'). |
-| `agg_mensal` | `VARCHAR` | Regra de agregação para escala mensal ('ultimo', 'soma', 'media'). |
-| `sgs_codigo` | `INTEGER` | Código da série temporal no SGS/BACEN (se aplicável). |
-| `cd_conta` | `VARCHAR` | Código da conta contábil DRE/BPA/BPP na CVM (se aplicável). |
-| `regra_calculo` | `VARCHAR` | Fórmula ou regra de cálculo do indicador. |
+### `dim_indicador` (Catálogo de Indicadores Financeiros)
 
-#### Catálogo de Indicadores do Projeto
-| SK | Código | Nome | Fonte | Tipo | Unidade | Regra de Cálculo / Fórmula |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| 1 | `SELIC_META` | Taxa de juros - Selic Meta | BACEN | bruto | % a.a. | Taxa meta fixada pelo COPOM (SGS 432). |
-| 2 | `SELIC_EFETIVA` | Taxa de juros - Selic Efetiva (over) | BACEN | bruto | % a.a. | Taxa ponderada das operações compromissadas diárias (SGS 1178). |
-| 3 | `IPCA_MENSAL` | IPCA Mensal | BACEN | bruto | % | Variação percentual mensal do IPCA (SGS 433). |
-| 4 | `IPCA_12M` | IPCA Acumulado 12M | BACEN | bruto | % a.a. | Variação acumulada do IPCA nos últimos 12 meses (SGS 13522). |
-| 5 | `PTAX_VENDA` | Taxa de Câmbio - Dólar (Venda) | BACEN | bruto | R$ | Cotação de venda do dólar americano divulgada pelo BACEN (SGS 1). |
-| 6 | `IBC_BR_SA` | IBC-Br com Ajuste Sazonal | BACEN | bruto | Índice | Índice de atividade econômica do Banco Central dessazonalizado (SGS 24364). |
-| 7 | `POUPANCA` | Rendimento da Poupança | BACEN | bruto | % | Rendimento da caderneta de poupança (SGS 196). |
-| 8 | `JURO_REAL_EXPOST` | Juro Real Ex-Post (Fisher) | BACEN | derivado | % a.a. | Fórmula exata de Fisher: (1 + Selic Meta / 100) / (1 + IPCA 12M / 100) - 1. |
-| 9 | `RECEITA_LIQUIDA` | Receita Líquida de Vendas | CVM | bruto | R$ | DRE conta 3.01 (Plano Industrial). |
-| 10 | `LUCRO_BRUTO` | Resultado Bruto | CVM | bruto | R$ | DRE conta 3.03 (Plano Industrial). |
-| 11 | `EBIT` | EBIT (Resultado Operacional) | CVM | bruto | R$ | DRE conta 3.05 (Resultado Antes do Resultado Financeiro e Impostos). |
-| 12 | `DESP_FINANCEIRAS` | Despesas Financeiras | CVM | bruto | R$ | DRE conta 3.06.02 (Despesas Financeiras). |
-| 13 | `LUCRO_LIQUIDO` | Lucro ou Prejuízo Líquido | CVM | bruto | R$ | DRE conta 3.11 (Lucro/Prejuízo Consolidado do Período). |
-| 14 | `ATIVO_CIRCULANTE` | Ativo Circulante | CVM | bruto | R$ | BPA conta 1.01. |
-| 15 | `PASSIVO_CIRCULANTE` | Passivo Circulante | CVM | bruto | R$ | BPP conta 2.01. |
-| 16 | `CAIXA_EQUIV` | Caixa e Equivalentes de Caixa | CVM | bruto | R$ | BPA conta 1.01.01. |
-| 17 | `APLIC_FINANC` | Aplicações Financeiras | CVM | bruto | R$ | BPA conta 1.01.02. |
-| 18 | `EMPR_FIN_CP` | Empréstimos e Financiamentos CP | CVM | bruto | R$ | BPP conta 2.01.04. |
-| 19 | `EMPR_FIN_LP` | Empréstimos e Financiamentos LP | CVM | bruto | R$ | BPP conta 2.02.01. |
-| 20 | `PATRIMONIO_LIQUIDO` | Patrimônio Líquido Consolidado | CVM | bruto | R$ | BPP conta 2.03. |
-| 21 | `RECEITA_INTERMEDIACAO` | Receita de Intermediação Financeira | CVM | bruto | R$ | DRE conta 3.01 para Instituições Financeiras. |
-| 22 | `MARGEM_LIQUIDA` | Margem Líquida | CVM | derivado | fração | Lucro Líquido / Receita Líquida. |
-| 23 | `MARGEM_EBIT` | Margem EBIT | CVM | derivado | fração | EBIT / Receita Líquida. |
-| 24 | `ROE` | Return on Equity (ROE) | CVM | derivado | fração | Lucro Líquido / Patrimônio Líquido. |
-| 25 | `LIQUIDEZ_CORRENTE` | Liquidez Corrente | CVM | derivado | Razão | Ativo Circulante / Passivo Circulante. |
-| 26 | `DIVIDA_BRUTA` | Dívida Bruta | CVM | derivado | R$ | Empréstimos e Financiamentos CP + LP. |
-| 27 | `DIVIDA_LIQUIDA` | Dívida Líquida | CVM | derivado | R$ | Dívida Bruta - (Caixa e Equivalentes + Aplicações Financeiras). |
-| 28 | `CRESC_RECEITA` | Crescimento de Receita (YoY) | CVM | derivado | fração | (Receita Líquida t / Receita Líquida t-1) - 1. |
-| 29 | `RETORNO_DIARIO` | Retorno Diário | B3 | derivado | fração | (Close_t / Close_t-1) - 1. |
-| 30 | `SMA_21` | Média Móvel Simples 21D | B3 | derivado | R$ | Média móvel simples do preço de fechamento ajustado de 21 dias. |
-| 31 | `SMA_50` | Média Móvel Simples 50D | B3 | derivado | R$ | Média móvel simples do preço de fechamento ajustado de 50 dias. |
-| 32 | `VOLUME_FIN_APROX` | Volume Financeiro Aproximado | B3 | derivado | R$ | Close ajustado × Volume em quantidade de ações. |
+| SK | Código | Nome do Indicador | Origem | Tipo | Unidade | Fórmula / Regra de Cálculo Aplicada |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | `SELIC_META` | Taxa Selic Meta | BACEN | Bruto | % a.a. | Taxa meta definida pelo COPOM (SGS 432). |
+| 2 | `SELIC_EFETIVA` | Taxa Selic Efetiva (Over) | BACEN | Bruto | % a.a. | Taxa diária ponderada das operações (SGS 1178). |
+| 3 | `IPCA_MENSAL` | IPCA Mensal | BACEN | Bruto | % | Variação percentual mensal da inflação (SGS 433). |
+| 4 | `IPCA_12M` | IPCA Acumulado 12M | BACEN | Bruto | % a.a. | Inflação acumulada em 12 meses (SGS 13522). |
+| 5 | `PTAX_VENDA` | Dólar PTAX (Venda) | BACEN | Bruto | R$ | Cotação oficial de venda do Dólar (SGS 1). |
+| 6 | `IBC_BR_SA` | IBC-Br Sazonalizado | BACEN | Bruto | Índice | Índice de atividade econômica do BACEN (SGS 24364). |
+| 7 | `POUPANCA` | Rendimento Poupança | BACEN | Bruto | % | Rendimento mensal da poupança (SGS 196). |
+| 8 | `JURO_REAL_EXPOST` | Juro Real Ex-Post | BACEN | Derivado | % a.a. | Equação de Fisher: $\frac{1 + \text{Selic}}{1 + \text{IPCA}} - 1$. |
+| 9 | `RECEITA_LIQUIDA` | Receita Líquida | CVM | Bruto | R$ | DRE Conta 3.01 (Plano Industrial). |
+| 10 | `LUCRO_BRUTO` | Resultado Bruto | CVM | Bruto | R$ | DRE Conta 3.03 (Plano Industrial). |
+| 11 | `EBIT` | EBIT (Resultado Operacional) | CVM | Bruto | R$ | DRE Conta 3.05 (Resultado Operacional). |
+| 12 | `DESP_FINANCEIRAS` | Despesas Financeiras | CVM | Bruto | R$ | DRE Conta 3.06.02 (Despesas Financeiras). |
+| 13 | `LUCRO_LIQUIDO` | Lucro Líquido | CVM | Bruto | R$ | DRE Conta 3.11 (Lucro/Prejuízo do Período). |
+| 14 | `ATIVO_CIRCULANTE` | Ativo Circulante | CVM | Bruto | R$ | BPA Conta 1.01. |
+| 15 | `PASSIVO_CIRCULANTE` | Passivo Circulante | CVM | Bruto | R$ | BPP Conta 2.01. |
+| 16 | `CAIXA_EQUIV` | Caixa e Equivalentes | CVM | Bruto | R$ | BPA Conta 1.01.01. |
+| 17 | `APLIC_FINANC` | Aplicações Financeiras | CVM | Bruto | R$ | BPA Conta 1.01.02. |
+| 18 | `EMPR_FIN_CP` | Empréstimos CP | CVM | Bruto | R$ | BPP Conta 2.01.04. |
+| 19 | `EMPR_FIN_LP` | Empréstimos LP | CVM | Bruto | R$ | BPP Conta 2.02.01. |
+| 20 | `PATRIMONIO_LIQUIDO` | Patrimônio Líquido | CVM | Bruto | R$ | BPP Conta 2.03. |
+| 21 | `RECEITA_INTERMEDIACAO` | Receita Intermediação | CVM | Bruto | R$ | DRE Conta 3.01 (Instituições Financeiras / COSIF). |
+| 22 | `MARGEM_LIQUIDA` | Margem Líquida | CVM | Derivado | Fração | $\frac{\text{Lucro Líquido}}{\text{Receita Líquida}}$ |
+| 23 | `MARGEM_EBIT` | Margem EBIT | CVM | Derivado | Fração | $\frac{\text{EBIT}}{\text{Receita Líquida}}$ |
+| 24 | `ROE` | Return on Equity (ROE) | CVM | Derivado | Fração | $\frac{\text{Lucro Líquido}}{\text{Patrimônio Líquido}}$ |
+| 25 | `LIQUIDEZ_CORRENTE` | Liquidez Corrente | CVM | Derivado | Razão | $\frac{\text{Ativo Circulante}}{\text{Passivo Circulante}}$ |
+| 26 | `DIVIDA_BRUTA` | Dívida Bruta | CVM | Derivado | R$ | $\text{Empréstimos CP} + \text{Empréstimos LP}$ |
+| 27 | `DIVIDA_LIQUIDA` | Dívida Líquida | CVM | Derivado | R$ | $\text{Dívida Bruta} - (\text{Caixa} + \text{Aplicações})$ |
+| 28 | `CRESC_RECEITA` | Crescimento Receita (YoY) | CVM | Derivado | Fração | $\frac{\text{Receita}_t}{\text{Receita}_{t-1}} - 1$ |
+| 29 | `RETORNO_DIARIO` | Retorno Percentual Diário | B3 | Derivado | Fração | $\frac{\text{Close}_t}{\text{Close}_{t-1}} - 1$ |
+| 30 | `SMA_21` | Média Móvel Simples 21D | B3 | Derivado | R$ | Média móvel simples do preço ajustado (21 dias). |
+| 31 | `SMA_50` | Média Móvel Simples 50D | B3 | Derivado | R$ | Média móvel simples do preço ajustado (50 dias). |
+| 32 | `VOLUME_FIN_APROX` | Volume Financeiro Aproximado | B3 | Derivado | R$ | $\text{Close Ajustado} \times \text{Volume Quantidade}$ |
 
-### `fato_macro` (Fato Macroeconômica)
-| Coluna | Tipo | Descrição / Regra de Negócio |
-| :--- | :--- | :--- |
-| `sk_tempo` | `INTEGER` | Chave estrangeira para `dim_tempo`. |
-| `sk_indicador` | `INTEGER` | Chave estrangeira para `dim_indicador`. |
-| `valor` | `NUMERIC` | Valor observado da série macroeconômica na data nativa. |
+### Fatos do Modelo Dimensional
 
-### `fato_cotacoes` (Fato Mercado e Cotações)
-| Coluna | Tipo | Descrição / Regra de Negócio |
-| :--- | :--- | :--- |
-| `sk_tempo` | `INTEGER` | Chave estrangeira para `dim_tempo`. |
-| `sk_empresa` | `INTEGER` | Chave estrangeira para `dim_empresa`. |
-| `open` | `NUMERIC` | Preço de abertura da ação no pregão (R$). |
-| `high` | `NUMERIC` | Preço máximo negociado no pregão (R$). |
-| `low` | `NUMERIC` | Preço mínimo negociado no pregão (R$). |
-| `close` | `NUMERIC` | Preço de fechamento ajustado por proventos (R$). |
-| `volume` | `NUMERIC` | Volume em quantidade de títulos negociados. |
-| `volume_fin_aprox` | `NUMERIC` | Volume financeiro aproximado em R$ (`close × volume`). |
-| `retorno_diario` | `NUMERIC` | Retorno diário percentual em fração (`close_t / close_t-1 - 1`). |
-| `sma_21` | `NUMERIC` | Média móvel simples de 21 pregões (R$). |
-| `sma_50` | `NUMERIC` | Média móvel simples de 50 pregões (R$). |
-
-### `fato_demonstrativos` (Fato Demonstrativos Financeiros CVM)
-| Coluna | Tipo | Descrição / Regra de Negócio |
-| :--- | :--- | :--- |
-| `sk_tempo` | `INTEGER` | Chave estrangeira para `dim_tempo` (data `DT_FIM_EXERC`). |
-| `sk_empresa` | `INTEGER` | Chave estrangeira para `dim_empresa`. |
-| `sk_indicador` | `INTEGER` | Chave estrangeira para `dim_indicador`. |
-| `valor` | `NUMERIC` | Valor em R$ ou razão em fração referente ao exercício anual. |
-
+* `fato_macro`: Guarda a série histórica diária/mensal dos indicadores BACEN (`sk_tempo`, `sk_indicador`, `valor`).
+* `fato_cotacoes`: Armazena preços e volumes da B3 (`sk_tempo`, `sk_empresa`, `open`, `high`, `low`, `close`, `volume`, `volume_fin_aprox`, `retorno_diario`, `sma_21`, `sma_50`).
+* `fato_demonstrativos`: Registra o saldo contábil anual padronizado da CVM (`sk_tempo`, `sk_empresa`, `sk_indicador`, `valor`).
 
 ---
 
 ## 6. Tecnologias e Bibliotecas
-> 🚧 A preencher no Card 12 (Trello)
+
+| Tecnologia / Biblioteca | Categoria | Justificativa Técnica para Escolha no Projeto |
+| --- | --- | --- |
+| **Python 3.11** | Linguagem | Ambiente moderno com excelente performance em processamento de dados e suporte a tipagem. |
+| **Streamlit (v1.40+)** | Interface / Web | Construção rápida de Data Apps reativos em Python nativo com suporte a componentes modernos (`st.tabs`, `st.metric`). |
+| **Plotly Express / Graph Objects** | Visualização | Biblioteca líder para gráficos interativos, suporte a hover customizado, subplots e exportação em alta definição. |
+| **Pandas & NumPy** | Manipulação | Estruturas de dados vetoriais de alta performance para limpeza, agrupamento, pivots e cálculos estatísticos. |
+| **PyArrow** | Armazenamento | Manipulação eficiente de arquivos no formato Parquet com suporte a pushdown de filtros e compressão `zstd`. |
+| **SQLAlchemy & psycopg2-binary** | Banco de Dados | ORM e driver relacional para conexão segura e otimizada ao PostgreSQL na nuvem via `st.connection`. |
+| **yfinance** | Coleta B3 | Biblioteca para ingestão de séries temporais históricas de preços e volumes ajustados de ações da B3. |
+| **Requests** | Ingestão HTTP | Realização de chamadas resilientes às APIs REST do BACEN (SGS) e downloads dos arquivos DFP da CVM. |
+| **Pytest** | Qualidade | Framework para escrita e execução automatizada de testes unitários e de integração no pipeline. |
 
 ---
 
 ## 7. Principais Resultados e Evidências Numéricas
-> 🚧 A preencher no Card 10 (Trello)
 
-A análise da base macroeconômica consolidada (2019–2023) revelou as seguintes evidências e achados observados nos dados do BACEN:
+A análise integrada das três bases de dados no período de 2019 a 2023 revelou achados quantitativos de destaque:
 
-* **Pico da Selic Meta:** A taxa básica de juros atingiu seu valor máximo do período em **agosto de 2022**, situando-se em **13,75% a.a.**, patamar no qual permaneceu estável durante o ciclo de manutenção até **agosto de 2023**.
-* **Pico do Juro Real Ex-Post:** O maior nível de Juro Real Ex-Post (equação de Fisher) observado no recorte ocorreu em **setembro de 2023**, alcançando **7,57% a.a.**, resultado da desaceleração do IPCA 12M acumulado aliada ao início gradual do ciclo de cortes da Selic.
-* **Comportamento do Câmbio (PTAX):** O dólar PTAX registrou média de **R$ 5,16** no período filtrado, com janelas de valorização acentuada durante o biênio 2020–2021.
-* **Atividade Econômica vs. Política Monetária:** O indicador dessazonalizado do IBC-Br manteve tendência de recuperação pós-2020 mesmo durante o ciclo de aperto monetário iniciado em março de 2021.
+### 7.1. Macroeconomia (BACEN)
 
-Na análise fundamentalista e Contábil (CVM) foram observados os seguintes dados:
+* **Topo da Taxa Selic:** A taxa básica de juros atingiu seu valor máximo de **13,75% a.a. em agosto de 2022**, mantendo-se constante até o início do ciclo de afrouxamento monetário em agosto de 2023.
+* **Pico do Juro Real Ex-Post:** O maior patamar de Juro Real calculado pela Equação de Fisher ocorreu em **setembro de 2023, atingindo 7,57% a.a.**, resultado da desaceleração do IPCA 12M em contraste com a queda gradual da Selic.
+* **Patamar Cambial:** O Dólar PTAX Venda registrou média histórica de **R$ 5,16** na janela temporal analisada.
 
-- **Receita Líquida Consolidada (Industriais):** No exercício de 2023, o universo industrial registrou R$ 744,38 B em Receita Líquida, uma expansão de +20,00% em relação a 2022 em base comparável.
-- **Lucro Líquido Consolidado:** O lucro total consolidado (incluindo instituições financeiras) atingiu R$ 122,21 B em 2023.
-- **Rentabilidade da Carteira:** O ROE médio das companhias situou-se em 19,00% em 2023, impulsionado por empresas líderes dos setores de Materiais Básicos e Indústria.
-- **Solvência e Liquidez:** Companhias como PETR4, KLBN11, EGIE3, VALE3 e JBSS3 apresentaram Liquidez Corrente inferior ao limiar de segurança de 1,5x conjugado com Dívida Líquida positiva no exercício foco.
+### 7.2. Análise Fundamentalista (CVM)
 
-Na análise técnica e performance do mercado de ações (B3) foram obseravdos os seguintes dados:
+* **Volume de Receita Líquida:** As companhias industriais e comerciais analisadas movimentaram **R$ 744,38 bilhões em Receita Líquida em 2023**, representando um avanço de +20,00% na comparação com 2022.
+* **Geração de Lucro Consolidado:** O Lucro Líquido total consolidado (incluindo instituições financeiras) somou **R$ 122,21 bilhões no exercício de 2023**.
+* **Retorno sobre o Patrimônio (ROE):** O ROE médio da carteira fechou em **19,00% em 2023**, liderado por companhias dos setores de Materiais Básicos e Energia.
 
-- **Rentabilidade Normalizada (Base 100):** No período de 2021 a 2023, a carteira equiponderada dos ativos B3 registrou retorno acumulado médio de +217,60%. O ativo de maior destaque nominal no período foi **PRIO3** (+2.126,92%), impulsionado por expansão operacional no setor de óleo e gás. Por outro lado, a menor performance acumulada ficou com **LREN3** (-45,79%).
-- **Relação Risco vs. Retorno & Sharpe:** A análise da relação entre volatilidade anualizada e retorno acumulado destacou **PRIO3** com a melhor relação de Sharpe empírica do período, superando a taxa livre de risco (Selic Efetiva diária).
-- **Risco de Cauda & Drawdown:** Na avaliação de resiliência, a carteira equiponderada apresentou controle de drawdown em comparação com os papéis de maior volatilidade individual. O gráfico de área de drawdown evidenciou os momentos de maior estresse do mercado entre 2021 e 2022.
+### 7.3. Performance de Mercado (B3)
 
-Principais achados da análise integrada:
+* **Rentabilidade Acumulada:** A carteira equiponderada de ativos registrou retorno médio acumulado de **+217,60% na janela histórica**. O ativo de maior valorização nominal foi **PRIO3 (+2.126,92%)**, enquanto a menor performance ficou com **LREN3 (-45,79%)**.
+* **Eficiência de Sharpe:** A empresa **PRIO3** obteve o maior Índice de Sharpe empírico da amostra, apresentando a melhor relação entre excesso de retorno e volatilidade anualizada.
 
-- **Agregado da Carteira:** Durante o ciclo monetário observado (com taxa Selic vigente em 11,75% a.a.), a carteira consolidada registrou uma Receita Líquida Industrial de R$ 1.258,90 B e Lucro Líquido Consolidado de R$ 275,64 B.
+### 7.4. Visão Integrada da Tríade
 
-- **Liderança Setorial Multidimensional:** O setor de Materiais Básicos registrou a maior pontuação média no Score Final Consolidado (73.6 pts), sustentado por um Pilar de Solidez Contábil de 100.0 pts, Pilar de Resiliência Macro de 88.7 pts e Pilar de Retorno em Bolsa de 32.2 pts.
+* **Resultado Agregado da Carteira:** Sob o patamar da Selic em 11,75% a.a., o universo consolidado registrou R$ 1.258,90 bilhões em Receita Líquida Industrial e R$ 275,64 bilhões em Lucro Líquido.
+* **Liderança no Score Multidimensional:** O setor de **Materiais Básicos** obteve a maior pontuação agregada no Ranking Setorial (73,6 pts), impulsionado por elevada solidez contábil (100,0 pts) e resiliência a choques macroeconômicos (88,7 pts).
 
 ---
 
 ## 8. Discussão e Limitações da Análise
-> 🚧 A preencher no Card 10 (Trello)
 
-- **Instituições Financeiras:** Devido ao plano de contas específico (COSIF), bancos possuem métricas não aplicáveis (Margem EBIT, Liquidez Corrente, Dívida Líquida) exibidas como N/A.
+### 8.1. Limitações Metodológicas e Rigor Analítico
 
-- **Janela de Amostra:** A análise de mercado limita-se à janela temporal configurada (2019–2023), impactando a representatividade estatística.
+* **Ausência de Causalidade Direta:** As associações estatísticas, matrizes de correlação de Pearson e gráficos de dispersão apresentados no Data App indicam interdependência histórica entre variáveis, **não estabelecendo relação de causalidade determinística**.
+* **Matrizes em Níveis vs. Variações:** As análises de correlação entre valores absolutos de séries macroeconômicas podem apresentar componentes de tendência estocástica. Recomenda-se a avaliação em primeira diferença (variações) disponibilizada nos filtros do Dashboard 1.
+* **Interseção de Frequências Temporais:** A combinação entre séries diárias (B3 e Selic Over), mensais (IPCA e IBC-Br) e anuais (CVM) exige alinhamento no grão apropriado de cada indicador sem interpolação artificial.
 
-- **Agrupamento Setorial:** Classificação analítica própria para garantia de comparabilidade.
+### 8.2. Especificidades Contábeis e Setor Financeiro
 
-- **Correlação de Níveis vs. Variações:** As matrizes de correlação em níveis entre séries macroeconômicas podem apresentar correlações espúrias decorrentes de tendências estocásticas compartilhadas. Recomenda-se a análise complementar em modo de variações.
+* **Instituições Financeiras (Plano COSIF):** Devido à estrutura própria de balanço dos bancos (ausência de custo de bens vendidos ou estoque tradicional), indicadores como Margem EBIT, Liquidez Corrente e Dívida Líquida são nulos e rotulados como `N/A`. A Receita de Intermediação Financeira é mantida de forma isolada da Receita Líquida Industrial.
+* **Patrimônio Líquido Negativo ($PL \le 0$):** Companhias que apresentam passivo a descoberto em exercícios específicos possuem o cálculo de ROE suspenso para evitar distorções de inversão de sinal matemático.
+* **Valores Nominais:** Os demonstrativos da CVM refletem valores históricos nominais reportados pelas empresas sem atualização inflacionária.
 
-- **Granularidade das Séries:** Séries com frequências nativas distintas (Selic e PTAX diárias vs. IPCA e IBC-Br mensais) exigem alinhamento temporal e regras específicas de agregação.
+### 8.3. Coleta de Dados e Fontes Externas
 
-- **Taxas de Juros (Meta vs. Efetiva):** A Selic Meta reflete as metas estabelecidas pelo COPOM, enquanto a Selic Efetiva (SGS 1178) representa as operações ponderadas over do mercado.
-
-- **Ausência de Causalidade:** Associação estatística e coeficientes de correlação não implicam relação de causalidade direta ou imediata entre as variáveis analisadas.
-
-- **Janela de Dados:** Análise restrita ao período de 2019 a 2023 (3 a 5 exercícios anuais por empresa).
-
-- **Valores Nominais:** As demonstrações contábeis CVM são apresentadas em valores nominais sem ajuste inflacionário por IPCA.
-
-- **Tratamento de Instituições Financeiras:** Bancos utilizam a Receita de Intermediação Financeira (não comparável à Receita Líquida industrial) e são excluídos dos cálculos de Liquidez Corrente, Margem EBIT e Dívida Líquida.
-
-- **Reapresentações Contábeis:** Foram consideradas as versões finais de reapresentação das DFP divulgadas pelas companhias à CVM.
-
-- **Amostra Setorial ($n$ reduzido):** Setores com poucas empresas listadas apresentam maior sensibilidade em boxplots e métricas agregadas.
-
-- **Classificações Próprias:** O enquadramento em setores analíticos e o indicador `exportadora_commodities` seguem critérios definidos na arquitetura do projeto.
-
-- **Janela de Observação:** Dados restritos ao período de 2021 a 2023. Desempenhos e métricas históricas não representam garantia de rentabilidade futura.
-
-- **Taxa Livre de Risco & Sharpe Empírico:** O cálculo do excesso de retorno no Índice de Sharpe utiliza a série de Selic Efetiva diária (código BACEN 1178, proxy do CDI) como taxa livre de risco. A premissa de normalidade na distribuição de retornos diários é uma simplificação estatística.
-
-- **Volume Financeiro Aproximado:** O volume financeiro diário é aproximado pelo produto do preço de fechamento ajustado pela quantidade negociada obtida via `yfinance`, podendo haver pequenas variações em relação ao volume financeiro oficial consolidado da B3.
-
-- **Preços Ajustados:** Cotações históricas utilizam ajuste automático por proventos e desdobramentos (`auto_adjust=True`).
-
-**Cobertura Histórica e Amostral:** Análise restrita a 3 exercícios sociais e a um conjunto selecionado de setores representativos da B3.
-
-**1º Ano Parcial:** O primeiro ano do recorte histórico utiliza como base o primeiro pregão disponível da série temporal e é sinalizado visualmente como parcial.
-
-**Definição Simplificada de Alavancagem:** A métrica de alavancagem financeira utiliza padronização própria derivada da estrutura consolidada de demonstrativos.
-
-**Estresse Cambial por Limiar Arbitrário:** A identificação de episódios de choque cambial adota um limiar fixo de variação da PTAX no período.
-
-**Caráter Descritivo do Ranking:** O ranking setorial possui finalidade estritamente descritiva e ponderada. Não realiza inferências estatísticas de causalidade nem constitui recomendação de investimento.
-
-**Tratamento Metodológico de Instituições Financeiras (Bancos):** Devido à estrutura do plano contábil COSIF (ausência de demonstrativo tradicional de Margem EBIT e Liquidez Corrente), o setor Financeiro possui solidez avaliada exclusivamente pelo ROE (Solidez Parcial), enquanto pontua normalmente nos pilares de Bolsa e Resiliência Macro.
-
-**Classificações Analíticas Próprias:** Mapeamento setorial customizado para harmonizar as nomenclaturas entre as bases do BACEN, CVM e B3.
-
-* **Distribuição de Retornos e Sharpe Ratio (EDA):** A análise estatística de Jarque-Bera na Prata confirmou a rejeição de normalidade com caudas pesadas ($p < 0,05$) nos retornos diários dos ativos da B3. O Índice de Sharpe assume distribuição normal de retornos; portanto, os valores apresentados no Dashboard de Mercado (D3) devem ser interpretados como proxy descritiva e não como métrica paramétrica exata.
-
-* **Patrimônio Líquido Negativo:** Empresas com passivo a descoberto em exercícios específicos (PL $\le 0$) geram distorções no cálculo do ROE. Nestes casos, o indicador é sinalizado com ressalva visual e isolado de ordenações diretas.
-
-### 8.1. Limitações Conhecidas e Observações das Extrações (Camada Bronze)
-
-#### 8.1.1. Indisponibilidade de Tickers na B3 (Yahoo Finance / `yfinance`)
-- **`EMBR3` e `JBSS3`:** Durante a extração em produção via `yfinance`, as chamadas para esses tickers retornaram erros HTTP 404 e ausência de metadados de fuso horário (*timezone*).
-- **Tratamento:** O `B3Extractor` loga um aviso (`WARNING`), ignora o ticker problemático e prossegue com a ingestão dos demais ativos sem interromper a execução do pipeline.
-
-#### 8.1.2. Divergências e Inconsistências no Cadastro CVM (`cad_cia_aberta.csv`)
-- **Mapeamento de Tickers (`GGBR4`):** O ticker `GGBR4` (Gerdau S.A. - CD_CVM 3310) apresentou divergência de identificação no cadastro ativo recente da CVM.
-- **Empresas Canceladas ou Duplicadas:** Foram identificados registros históricos duplicados (ex.: CD_CVM `9512`) e companhias com situação cadastral `CANCELADA`.
-- **Tratamento:** O `CadastroExtractor` e o `CvmExtractor` emitem alertas de validação e filtram apenas os dados aplicáveis, garantindo que o processamento das demonstrações financeiras (DFPs) não seja interrompido por inconsistências da fonte oficial.
-
-### 8.2. As limitações abaixo se referem estritamente às camadas Bronze e Prata desenvolvidas.
-
-* **Persistência Relacional em Sandbox**: O banco de dados PostgreSQL/Neon é utilizado como destino de armazenamento no modo produção. Em modo Sandbox (`is_sandbox=True`), a persistência é mantida exclusivamente em arquivos Parquet locais para garantir isolamento e velocidade nos testes.
-* **Reapresentações de Balanços CVM**: Foram identificadas 629 contas com divergências entre o exercício corrente e a reapresentação comparativa do ano anterior. O pipeline adota a política de utilizar os dados do arquivo do último exercício divulgado.
-* **Ativos sem Histórico B3**: Os tickers `EMBR3` e `JBSS3` apresentaram ausência de dados na extração do YFinance, requerendo fontes alternativas em evoluções futuras.
-* **Exercícios Fiscais não Decendrais**: As regras de agregação contábil assumem encerramento em 31 de dezembro. Empresas com datas de balanço divergentes são sinalizadas pelo `CvmCleaner`.
+* **Estimativa de Volume Financeiro:** A API publica o volume negociado em quantidade de títulos. O volume financeiro em Reais é estimado pelo produto $Close \times Qty$.
+* **Reapresentações DFP:** O pipeline retém exclusivamente a última versão retificadora oficial enviada pelas empresas à CVM.
+* **Indisponibilidade Pontual:** Eventuais falhas de retorno em tickers específicos na extração YFinance são contornadas via descarte seguro com registro nos logs do DataOps.
 
 ---
 
 ## 9. Aplicação Profissional e Decisões de Negócio
-> 🚧 A preencher no Card 10 (Trello)
+
+A plataforma oferece suporte prático a diferentes personas do ambiente corporativo e financeiro:
+
+* **Diretores Financeiros (CFOs) e Controllers:** Avaliação do custo de carregamento do passivo frente às oscilações da Selic, acompanhamento do impacto das despesas financeiras sobre o lucro líquido e monitoramento dos índices de solvência corporativa.
+* **Gestores de Carteira e Analistas de Investimento:** Identificação de empresas com elevado Retorno sobre o Patrimônio (ROE), mapeamento de ativos com melhor relação risco-retorno (Sharpe) e análise da capacidade de repasse de preços e proteção cambial de setores exportadores.
+* **Comitês de Risco e Estratégia:** Simulação de cenários de estresse através de parâmetros ajustáveis na interface (limiares de estresse cambial e cortes de liquidez), permitindo antecipar impactos sobre a saúde financeira dos setores.
 
 ---
 
 ## 10. Demonstração do Data App (Streamlit)
 
-### 10.1. Arquitetura de Interface e UX (Streamlit)
+### 10.1. Arquitetura de Interface e UX
 
-#### 10.1.1. Landing Page e Roteamento Sob Demanda (Lazy Loading)
-- **Roteamento por `st.session_state`**: A navegação entre a Landing Page, o DataOps Control Tower e o BI Executivo ocorre sem uso de páginas nativas multipage do Streamlit, mantendo o controle centralizado em `app.py` através da chave `st.session_state["modo"]`.
-- **Carga Sob Demanda**: Módulos pesados (`src.etl`, `src.ui.data_loader`, `src.ui.dashboards`, `plotly`) não são importados na inicialização do aplicativo. Os imports das visões (`dataops_view` e `executive_view`) ocorrem estritamente dentro dos blocos condicionais de roteamento, garantindo zero alocação de memória e zero conexões a banco antes do usuário selecionar explicitamente o modo de operação.
+* **Roteamento Sob Demanda (*Lazy Loading*):** Gerenciado centralmente em `app.py` via `st.session_state["modo"]`. Módulos pesados de visualização e ETL não são importados na abertura do app, reduzindo o tempo de carregamento inicial e consumo de memória RAM.
+* **Design System Isolado:** Variáveis e tokens visuais centralizados no Python e exportados para a folha de estilos `src/ui/styles/theme.css`. As classes possuem prefixo dedicado (`.fx-card`, `.fx-badge`) evitando conflito com o CSS nativo do Streamlit.
+* **Sidebar Global e Filtros Locais:** A barra lateral controla o universo global de análise (período de datas, tickers e setores), enquanto painéis retráteis no topo de cada dashboard oferecem refinamentos específicos.
 
-#### 10.1.2. Gestão do Estado de Sessão (`src/ui/state.py`)
-- **Centralização de Defaults**: O módulo `src/ui/state.py` inicializa e mantém o dicionário de estado com chaves globais padrão:
-  - `modo`: Roteamento da aplicação (`None` para Landing, `"dataops"`, `"bi"`).
-  - `aba_ativa`: Controle de navegação horizontal no BI.
-  - `filtros`: Estrutura de filtros globais pré-configurados.
-- **Transição de Navegação**: Funções puras (`ir_para(modo)`, `voltar_landing()`) alteram o estado de forma previsível e isolada de regras de apresentação.
+### 10.2. Landing Page e Navegação
 
-#### 10.1.3. Camada de Estilo Isolada e Design System (`src/config/theme.py` & `src/ui/styles/`)
-- **Fonte Única da Verdade (`theme.py`)**: Tokens de design (paleta de cores, tipografia, geometria, elevações) são centralizados no Python e exportados dinamicamente para variáveis CSS (`:root`).
-- **CSS Isolado (`theme.css`)**: Estilização baseada em classes customizadas com prefixo `.fx-` (`.fx-card`, `.fx-hero`, `.fx-badge`, `.fx-header-title`), evitando contaminação e colisões com o CSS interno do Streamlit.
-- **Injeção Resiliente (`style_loader.py`)**: A função `inject_css()` injeta o arquivo de estilos isolados via `st.markdown(..., unsafe_allow_html=True)` com tratamento de exceção resiliente a falhas de I/O.
-- **Sincronia com Tema Nativo**: O arquivo `.streamlit/config.toml` reflete rigorosamente as cores e fontes definidas nos tokens do projeto.
+A tela de abertura apresenta a visão geral dos modos de operação da plataforma com carregamento sob demanda:
 
-### 10.2. Dashboard 1 — Inteligência Macroeconômica (BACEN)
+<br>
 
-O Dashboard 1 apresenta a visão consolidada das variáveis macroeconômicas brasileiras organizadas em 5 abas temáticas, com filtros locais colapsáveis, opção de exportação em CSV e nota de não-causalidade:
+![app_landing](./images/app_landing.png)
 
-* **Visão Geral:** KPIs de Selic Meta, IPCA 12M, Juro Real Ex-Post e PTAX com variação em 12 meses (delta) e gráfico integrado da política monetária.
-* **Câmbio (PTAX):** Evolução diária do câmbio com bandas de períodos acima da média e dispersão PTAX x IPCA.
-* **Atividade Econômica:** Trajetória do IBC-Br com ajuste sazonal sobreposta à Selic Meta e bandas de ciclos monetários (aperto, corte e manutenção).
-* **Correlações:** Heatmap de Pearson e matriz de defasagens temporais entre câmbio e inflação.
-* **Dados & Metodologia:** Tabela da base mensal processada e nota técnica sobre a Equação de Fisher.
+<br>
 
-*(Prints da aplicação salvos em `docs/img/`)*
+O painel lateral (Sidebar) oferece filtros cruzados (Global, aplicado a todos os dashboards) com suporte a seleção de período, tickers, setores e botão funcional de reset:
 
-### 10.3. Dashboard 2 — Análise Fundamentalista & Contábil (CVM)
+<br>
 
-O Dashboard 2 apresenta uma estrutura em 4 abas para navegação executiva:
+![app_filtros](./images/d1_filtro_global.png)
 
-1. **Visão Geral:** KPIs de Receita, Lucro, ROE e Liquidez com delta anual compactos (B/T), visualização separada da Evolução da Receita por tipo de plano contábil (Industriais vs. Financeiras) e Donut de participação setorial.
-   ![Visão Geral CVM](docs/img/cvm_visao_geral.png)
+<br>
 
-2. **Rentabilidade:** Matriz Scatter de Margem Líquida vs. ROE em quadrantes, evolução temporal de margem e subplots dinâmicos de Boxplot EBIT por setor/grupo com escalas Y independentes.
-   ![Rentabilidade CVM](docs/img/cvm_rentabilidade.png)
+### 10.3. DataOps Control Tower & Profiling (EDA)
 
-3. **Solvência:** Gráfico duplo (Dívida Líquida vs. Liquidez Corrente) com limiar de liquidez ajustável no filtro topo e tabela dinâmica de atenção à solvência.
-   ![Solvência CVM](docs/img/cvm_solvencia.png)
+Interface dedicada à gestão de pipeline e diagnósticos estatísticos de qualidade dos dados:
 
-4. **Dados & Metodologia:** Tabelas de demonstrativos processados segregadas por empresas industriais e instituições financeiras (sem colunas irrelevantes), alertas de qualidade e notas metodológicas CVM.
-   ![Dados e Metodologia CVM](docs/img/cvm_dados.png)
+* **Parametrização e Carga:**
 
-### 10.4. Dashboard 3 — Mercado e Risco (B3)
-O Dashboard de Mercado e Risco consolida a inteligência quantitativa de ativos negociados na B3:
-1. **Rentabilidade Normalizada (Base 100):** Comparativo temporal de desempenho normalizado no nível 100 no primeiro pregão do período. (`docs/img/d3_base100.png`)
-2. **Dispersão Risco vs. Retorno:** Volatilidade anualizada (% a.a.) no eixo X vs. Retorno acumulado (%) no eixo Y, com dimensão das bolhas proporcional ao volume financeiro. (`docs/img/d3_risco_retorno.png`)
-3. **Distribuição dos Retornos Diários:** Histograma de frequência com boxplot marginal e indicação visual da cauda no Percentil 5%. (`docs/img/d3_histograma.png`)
-4. **Área de Drawdown:** Evolução da queda percentual acumulada a partir dos topos históricos dos ativos e da carteira. (`docs/img/d3_drawdown.png`)
-5. **Médias Móveis (SMA 21 / 50):** Gráfico multilinha com preço de fechamento e médias de curto e médio prazo para análise de tendência de ativo selecionado. (`docs/img/d3_sma.png`)
+<br>
 
-### 10.5. Dashboard 4 — Visão Integrada (Tríade)
+![dataops_parametros](./images/dataops/dataops_etl_parametros_carga.png)
 
-Painel consolidado cruzando dados macroeconômicos, contábeis e de mercado em 6 abas analíticas:
+<br>
 
-1. Visão Geral Integrada & Storytelling: Resumo executivo em linguagem natural e KPIs da carteira.
 
-2. Juros e Setores: Sensibilidade dos demonstrativos contábeis frente à evolução do ciclo da taxa Selic.
+* **Relatório de Saúde da Base (Ouro):**
 
-3. Câmbio e Desempenho: Impacto das oscilações da PTAX sobre retornos e margens operacionais.
+<br>
 
-4. Matriz Risco x Retorno x Solidez: Dispersão multidimensional integrando os três eixos da Tríade.
+![dataops_saude](./images/dataops/dataops_etl_relatorio_saude.png)
 
-5. Ranking Setorial Multidimensional: Comparativo setorial por pilar com exibição do score final consolidado.
+<br>
 
-6. Dados e Metodologia: Exibição das bases de dados processadas (BACEN, CVM e B3) e notas metodológicas de comparabilidade.
+
+* **Painel de Análise Exploratória (EDA):**
+
+| Módulo EDA | Visualização de Diagnóstico |
+| --- | --- |
+| **Qualidade & Duplicatas** | ![dataops_eda1](./images/dataops/dataops_eda_1_nulos_duplicatas.png) |
+| **Distribuições & Outliers** | ![dataops_eda2](./images/dataops/dataops_eda_2_distribuicoes.png) |
+| **Cobertura Temporal** | ![dataops_eda3](./images/dataops/dataops_eda_3_cobertura_temporal.png) |
+| **Estatísticas Descritivas** | ![dataops_eda4](./images/dataops/dataops_eda_4_estatisticas.png) |
+| **Matriz de Achados** | ![dataops_eda5](./images/dataops/dataops_eda_5_achados_qualidade.png) |
+
+
+
+### 10.4. Dashboard 1 — Inteligência Macroeconômica (BACEN)
+
+Monitoramento das séries temporais oficiais do Banco Central do Brasil:
+
+* **Visão Geral:** KPIs estratégicos e gráfico combinado da política monetária.
+
+*KPIs Globais:* Exibem o valor mais recente do período (Selic Meta, IPCA 12M, Juro Real Ex-Post e Dólar PTAX) acompanhado da variação (delta) em relação a 12 meses anteriores (em p.p. ou variação percentual).
+
+*Gráfico Política Monetária:* Combina a curva da Selic Meta (% a.a.) e IPCA 12M (% a.a.) em linhas com o Juro Real Ex-Post em barras. Permite identificar visualmente o grau de aperto ou afrouxamento monetário do Banco Central.
+
+<br>
+
+![d1_1](./images/d1/d1_1_visao_geral.png)
+
+<br>
+
+* **Câmbio (PTAX):** Série histórica com destaques acima da média e dispersão cambial.
+
+*Evolução do Dólar PTAX:* Gráfico de linha temporal da taxa PTAX Venda diária/mensal. A linha tracejada indica a média histórica do período (R$ 4,93) e as áreas sombreadas destacam os ciclos em que a moeda norte-americana operou acima da média.
+
+
+*Dispersão PTAX x IPCA 12M:* Diagrama de dispersão onde cada ponto representa um mês. O eixo X indica o PTAX, o eixo Y a taxa de IPCA 12M, a cor codifica o ano (2019 a 2023) e o tamanho da bolha é proporcional ao patamar da Selic.
+
+<br>
+
+![d1_2](./images/d1/d1_2_cambio_ptax.png)
+
+<br>
+
+* **Atividade Econômica:** Trajetória do IBC-Br dessazonalizado e bandas de ciclos monetários.
+
+*IBC-Br vs. Selic Meta e Ciclos Monetários:* Gráfico de dois eixos conectando o índice de atividade econômica do BACEN (IBC-Br com ajuste sazonal, eixo esquerdo) com a Selic Meta (eixo direito). As faixas verticais sombreadas categorizam a postura do COPOM em 3 fases:
+
+- Ciclo de Aperto (Rosa): Período de elevação contínua da taxa básica de juros.
+
+- Ciclo de Corte (Verde): Período de redução da Selic.
+
+- Manutenção (Cinza): Período de estabilidade da taxa.
+
+<br>
+
+![d1_3](./images/d1/d1_3_atividade_economica.png)
+
+<br>
+
+* **Correlações:** Matriz térmica de Pearson e tabela paramétrica de defasagens.
+
+*Matriz de Pearson:* Mapa de calor apresentando o coeficiente de correlação linear $r \in [-1, 1]$ entre os pares de variáveis selecionadas.
+
+*Matriz de Defasagem (PTAX x IPCA 12M):* Tabela paramétrica que exibe a variação da correlação de Pearson conforme se aplica um deslocamento temporal de 0 a 9+ meses na inflação.
+      
+
+<br>
+
+![d1_4](./images/d1/d1_4_correlacoes.png)
+
+<br>
+
+* **Dados & Metodologia:** Leitura tabular e nota explicativa da Equação de Fisher.
+
+*Funcionamento dos Filtros Locais (Dashboard 1)*
+        
+Os filtros disponíveis no painel retrátil no topo deste dashboard atuam exclusivamente sobre os componentes visuais da visão **Inteligência Macroeconômica**. Não há impacto cruzado nos demais dashboards (CVM, B3 ou Integrado).
+        
+* **Defasagem Câmbio x Inflação (meses):**
+  * **Escopo:** Afeta unicamente o gráfico de *Dispersão: PTAX x IPCA 12M* (Aba Câmbio PTAX).
+  * **Uso:** Desloca a série temporal do IPCA 12M em $N$ meses no tempo para analisar o efeito de *pass-through* cambial (o tempo de resposta da inflação frente às variações do Dólar PTAX).
+
+* **Modo da Correlação:**
+  * **Escopo:** Afeta a *Matriz de Correlação de Pearson* (Aba Correlações).
+  * **Opções:** 
+    * **Níveis:** Calcula a correlação estatística direta entre os valores absolutos observados das séries.
+    * **Variações:** Aplica a primeira diferença mensal ($\Delta = x_t - x_{t-1}$) para eliminar tendências de não-estacionariedade e avaliar a correlação entre as oscilações de curto prazo.
+
+* **Indicadores no Heatmap:**
+  * **Escopo:** Afeta a *Matriz de Correlação de Pearson* (Aba Correlações).
+  * **Uso:** Multiseletor que permite filtrar dinamicamente quais variáveis macroeconômicas serão incluídas no mapa de calor.
+       
+
+<br>
+
+![d1_5](./images/d1/d1_5_dados_filtro_local.png)
+
+<br>
+
+
+### 10.5. Dashboard 2 — Análise Fundamentalista & Contábil (CVM)
+
+Diagnóstico de desempenho e solvência das companhias abertas:
+
+* **Visão Geral:** Métricas consolidadas e distribuição setorial de receita.
+
+*KPIs Globais:* Exibem a Receita Líquida Total (exclusivo companhias industriais/comerciais), Lucro Líquido Consolidado, ROE Médio da Carteira e Liquidez Corrente Média para o exercício foco, acompanhados da variação percentual ou em p.p. em relação ao ano anterior.
+
+*Receita Líquida vs. Intermediação Financeira:* Apresenta barras anuais agrupadas por empresa. A Receita de Intermediação Financeira (bancos) é segregada da Receita Líquida (indústrias), impedindo distorções na agregação de receitas de naturezas contábeis distintas.
+
+*Distribuição Setorial da Receita Líquida:* Gráfico de rosca demonstrando a representatividade percentual de cada setor sobre o faturamento total consolidado das empresas industriais.
+
+<br>
+
+![d2_1](./images/d2/d2_1_visao_geral.png)
+
+<br>
+
+
+* **Rentabilidade:** Scatter em quadrantes (Margem vs. ROE) e boxplots de Margem EBIT.
+
+*Matriz Margem Líquida vs. ROE:* Diagrama de dispersão posicionando cada empresa em quatro quadrantes analíticos no exercício foco:
+- Líder: Margem Alta e ROE Alto.
+- Giro: Margem Baixa e ROE Alto (alta eficiência no uso do capital).
+- Nicho: Margem Alta e ROE Baixo.
+- Desafio: Margem Baixa e ROE Baixo.
+
+*Evolução Temporal da Margem Líquida:* Gráfico de linhas rastreando a trajetória de eficiência operacional percentual das empresas ao longo do tempo.
+
+*Distribuição da Margem EBIT por Grupo:* Painel de boxplots com eixos Y independentes por agrupamento, exibindo mediana, quartis e outliers de rentabilidade operacional.
+
+<br>
+
+![d2_2](./images/d2/d2_2_rentabilidade.png)
+
+<br>
+
+* **Solvência:** Comparativo de Dívida Líquida vs. Liquidez Corrente com limiar ajustável.
+
+*Níveis de Solvência e Liquidez Corrente:* Visualização combinada que confronta o volume de Dívida Líquida em R$ (barras) contra a Liquidez Corrente (linha com marcador) no exercício foco, com suporte à linha de parâmetro ajustável.
+
+*Empresas com Pontos de Atenção na Liquidez:* Tabela que lista automaticamente empresas que possuem índice de Liquidez Corrente abaixo do limiar configurado e/ou Dívida Líquida positiva.
+
+<br>
+
+![d2_3](./images/d2/d2_3_solvencia.png)
+
+<br>
+
+* **Dados & Metodologia:** Demonstrativos limpos e regras de enquadramento contábil.
+
+*Funcionamento dos Filtros Locais (Dashboard 2)*
+
+        
+Os filtros no topo desta página refinam as análises contábeis dentro do recorte temporal e corporativo definido pelo **Filtro Global da Sidebar**.
+        
+* **Exercício Foco (KPIs & Dispersão):**
+  * **Escopo:** Seleciona o ano de referência ancorado para os 4 KPIs consolidados do topo, o gráfico de *Distribuição Setorial da Receita Líquida* (Aba Visão Geral), a *Matriz Margem Líquida vs. ROE* (Aba Rentabilidade) e a análise de *Solvência e Liquidez* (Aba Solvência).
+  * **Uso:** Permite isolar um exercício contábil específico para comparações transversais entre empresas. As séries temporais de linha (como a *Evolução Temporal da Margem Líquida*) permanecem exibindo o período temporal completo definido na Sidebar.
+
+* **Agrupamento EBIT:**
+  * **Escopo:** Afeta a distribuição dos boxplots de Margem EBIT na aba *Rentabilidade*.
+  * **Opções:** 
+    * **Setor Analítico:** Agrupa as companhias pelas categorias setoriais padronizadas do projeto (Consumo & Varejo/Serviços, Energia, Indústria & Bens de Capital, Materiais Básicos).
+    * **Commodities vs Serviços:** Reorganiza a visualização comparando empresas produtoras/exportadoras de commodities primárias contra empresas voltadas a serviços e mercado interno.
+
+* **Limiar de Liquidez Corrente (x):**
+  * **Escopo:** Afeta o gráfico combinatório de solvência e a tabela de atenção na aba *Solvência*.
+  * **Uso:** Ajusta dinamicamente a linha tracejada horizontal de corte (ex: 1,50x) para sinalizar visualmente e filtrar companhias industriais que operam abaixo do patamar de liquidez desejado.
+        
+
+<br>
+
+![d2_4](./images/d2/d2_4_dados_filtro_local.png)
+
+<br>
+
+
+### 10.6. Dashboard 3 — Mercado e Risco (B3)
+
+Inteligência quantitativa de ativos cotados em bolsa:
+
+* **Rentabilidade Normalizada:** Desempenho comparativo com curva de nível Base 100.
+
+*KPIs Consolidados:* Exibem a rentabilidade acumulada média da carteira equiponderada, o ativo com maior desempenho (Destaque), o ativo com menor variação (Menor Perf.) e a volatilidade anualizada média no período.
+
+*Rentabilidade Comparativa Normalizada (Base 100):* Indexa todos os ativos no valor inicial de 
+100 na primeira data útil da janela temporal, permitindo comparar o crescimento relativo percentual de ações com faixas de preço absoluto distintas.
+
+<br>
+
+![d3_1](./images/d3/d3_1_rentabilidade.png)
+
+<br>
+
+* **Risco e Retorno:** Scatter Risco vs. Retorno e tabela de indicadores ajustados (Sharpe/VaR).
+
+*Relação Risco vs. Retorno (Dispersão):* Confronta a Volatilidade Anualizada (%) no eixo X contra o Retorno Acumulado (%) no eixo Y. O tamanho de cada bolha reflete o Volume Financeiro Médio Diário (R$) e a posição indica o perfil de eficiência da ação.
+
+*Tabela de Risco e Retorno Ajustado:* Consolida as métricas numéricas de rentabilidade, volatilidade, Índice de Sharpe, Drawdown Máximo, Assimetria (Skewness), Curtose (Kurtosis), VaR 95% e Volume Diário.
+
+<br>
+
+![d3_2](./images/d3/d3_2_risco_retorno.png)
+
+<br>
+
+* **Distribuição dos Retornos:** Histograma de frequência com boxplot marginal.
+
+*KPIs Estatísticos:* Exibem a Assimetria (viés de cauda), Curtose (espesura de cauda/risco de evento extremo), VaR 95% (Percentil 5%), Retorno Mínimo Diário e Retorno Máximo Diário.
+
+*Histograma com Boxplot Marginal:* Ilustra a frequência dos retornos percentuais diários com uma visualização de caixa no topo para identificação de mediana, intervalo interquartil (IQR) e outliers.
+
+<br>
+
+![d3_3](./images/d3/d3_3_distribuicao_dos_retornos.png)
+
+<br>
+
+* **Drawdown:** Curva temporal de queda a partir do pico histórico.
+
+*Evolução do Drawdown no Tempo:* Gráfico percentual contínuo que mede a queda percentual do preço de um ativo em relação à sua máxima histórica anterior (Peak-to-Trough).
+
+*Ranking de Resiliência:* Tabela ordenada pelo menor Drawdown Máximo (em módulo), identificando os papéis mais defensivos contra quedas acentuadas de mercado.
+
+<br>
+
+![d3_4](./images/d3/d3_4_drawdown.png)
+
+<br>
+
+* **Tendência (Média Móvel):** Fechamento acompanhado das médias simples SMA 21 e SMA 50.
+
+*Preço vs. Médias Móveis (SMA 21 / SMA 50):* Exibe a série temporal de preço de fechamento sobreposta pela Média Móvel Simples de 21 dias (curto prazo) e 50 dias (médio prazo) para identificação de tendências e pontos de cruzamento (Golden/Death Cross).
+
+<br>
+
+![d3_5](./images/d3/d3_5_tendencia.png)
+
+<br>
+
+* **Dados & Metodologia:** Notificações técnicas e premissas de cálculo da taxa livre de risco.
+
+*Funcionamento dos Filtros Locais (Dashboard 3)*
+        
+Os filtros no topo desta página aplicam refinamentos específicos em visualizações das abas de Mercado e Risco, operando dentro da seleção de empresas e janela temporal estabelecidas no **Filtro Global da Sidebar**.
+        
+* **Destaque na Base 100:**
+  * **Escopo:** Afeta o gráfico *Rentabilidade Comparativa Normalizada* (Aba Rentabilidade).
+  * **Uso:** Destaca com traço espesso e cor diferenciada a curva temporal de um ativo específico ou da *Carteira Equiponderada*, suavizando as demais para facilitar a comparação visual.
+
+* **Distribuição dos retornos (Histograma) / Ativo:**
+  * **Escopo:** Afeta os 5 KPIs de momentos estatísticos e o gráfico de *Distribuição dos Retornos Diários* (Aba Distribuição dos retornos).
+  * **Uso:** Alterna a análise entre a carteira consolidada ou a série de retornos de uma empresa individual.
+
+* **Ativos no Drawdown:**
+  * **Escopo:** Afeta exclusivamente o gráfico temporal *Evolução do Drawdown no Tempo* (Aba Drawdown).
+  * **Uso:** Multiseletor que permite isolar e comparar as trajetórias de perda a partir do pico histórico das empresas selecionadas. A tabela *Ranking de Resiliência* permanece exibindo a totalidade dos ativos filtrados.
+
+* **Ativo para Análise de Tendência (SMA):**
+  * **Escopo:** Afeta o gráfico *Preço vs. Médias Móveis* (Aba Tendência).
+  * **Uso:** Seleciona o ativo para exibição de suas cotações de fechamento diárias acompanhadas das médias móveis simples de 21 e 50 períodos.
+       
+
+<br>
+
+![d3_6](./images/d3/d3_6_dados_filtro_local.png)
+
+<br>
+
+
+### 10.7. Dashboard 4 — Visão Integrada da Tríade
+
+Cruzamento analítico multidimensional unificando BACEN, CVM e B3:
+
+* **Visão Integrada:** Resumo executivo da carteira e gráfico multieixo macro-cambial.
+
+*KPIs da Tríade:* Consolidação executiva combinando a política monetária recente do BACEN com o faturamento e lucro corporativo das empresas listadas na B3.
+
+*Trajetória Conjunta Macro-Cambial:* Gráfico multieixo temporal correlacionando a Selic Meta (% a.a.), IPCA 12M (% a.a.) e o Dólar PTAX Venda (R$), permitindo acompanhar regimes de aperto monetário e desvalorização cambial.
+
+*Rentabilidade Comparativa Normalizada (Base 100):* Evolução contínua da carteira de ativos cotados na B3 indexada no ponto inicial.
+
+<br>
+
+![d4_1](./images/d4/d4_1_visao_integrada.png)
+
+<br>
+
+* **Contabilidade e Mercado:** Lucro e ROE confrontados com o retorno em bolsa.
+
+*Lucro Líquido e ROE por Companhia:* Gráfico de barras duplas apresentando o resultado nominal (R$ Milhões) e a taxa de retorno sobre o patrimônio (% ROE) de cada empresa no exercício foco.
+
+*Eficiência Operacional (EBIT %) vs. Desempenho em Bolsa:* Dispersão relacionando a margem operacional das companhias com a rentabilidade de suas ações na bolsa.
+
+<br>
+
+![d4_2](./images/d4/d4_2_contabilidade_mercado.png)
+
+<br>
+
+* **Juros e Setores:** Retorno setorial cruzado com a Selic Média Anual.
+
+*Retorno Setorial em Bolsa vs. Taxa Selic Média Anual:* Confronta o desempenho das ações agrupadas por setor econômico com a taxa básica de juros média praticada pelo COPOM em cada ano.
+
+*Evolução Contábil durante o Ciclo da Selic:* Gráfico combinado correlacionando o índice de Despesa Financeira, Lucro Líquido, Alavancagem Média (Dívida Líquida / PL) e a Selic Média Anual.
+
+<br>
+
+![d4_3](./images/d4/d4_3_juros_setores.png)
+
+<br>
+
+* **Câmbio e Exportadoras:** Análise de sensibilidade em cenários de estresse cambial.
+
+*Comportamento de Exportadoras em Estresse Cambial:* Compara o retorno diário médio das empresas exportadoras de commodities versus demais setores em dias classificados como dentro ou fora da janela de choque cambial.
+
+*Margem EBIT Anual vs. PTAX Média:* Avalia a evolução temporal da rentabilidade operacional dos setores produtores de commodities frente às oscilações da taxa média do Dólar.
+
+<br>
+
+![d4_4](./images/d4/d4_4_cambio_exportadoras.png)
+
+<br>
+
+* **Ranking Setorial:** Score multidimensional parametrizável por pesos de pilares.
+
+*Ranking Setorial Multidimensional:* Painel de barras horizontais empilhadas/ponderadas que classifica a saúde e atratividade dos setores industriais e financeiros através de 3 pilares parametrizáveis:
+
+- Pilar Retorno em Bolsa: Performance de valorização acionária.
+- Pilar Resiliência Macro: Capacidade de manutenção de margem em ciclos adversos de juros e inflação.
+- Pilar Solidez Contábil: Níveis de liquidez corrente e estrutura de endividamento.
+
+<br>
+
+![d4_5](./images/d4/d4_5_ranking_setorial.png)
+
+<br>
+
+* **Dados & Metodologia:** Documentação consolidada das regras metodológicas integradas.
+
+*Funcionamento dos Filtros Locais (Dashboard 4)*
+        
+Os filtros no topo desta página orquestram as análises integradas cruzando dados do BACEN, CVM e B3, atuando dentro do recorte global estabelecido na Sidebar.
+        
+* **Exercício Foco (KPIs & Contábil):**
+  * **Escopo:** Afeta exclusivamente os KPIs contábeis de topo (**Receita Consolidada** e **Lucro Consolidado**) e os dois gráficos da aba *Contabilidade e Mercado*.
+  * **Nota:** Os KPIs macroeconômicos (**Selic Meta Vigente** e **IPCA 12M Acumulado**) permanecem exibindo a leitura do ponto mais recente do período selecionado.
+
+* **Modo Dispersão EBIT vs Retorno:**
+  * **Escopo:** Alterna a forma de cálculo e exibição nos gráficos da aba *Contabilidade e Mercado*.
+  * **Opções:** 
+    * **Ano de Foco:** Analisa a rentabilidade operacional (Margem EBIT) e o desempenho em bolsa restritos ao exercício ancorado.
+    * **Período Completo:** Plota a margem média histórica da empresa contra o retorno acumulado em toda a janela temporal filtrada.
+
+* **Janela Estresse Cambial (Dias) & Limiar Alta PTAX (%):**
+  * **Escopo:** Alteram unicamente o gráfico *Comportamento de Exportadoras em Períodos de Estresse Cambial* (Aba Câmbio e Exportadoras).
+  * **Uso:** Parametrizam o algoritmo de identificação de choques cambiais, estabelecendo a janela mista de observação em dias úteis e o desvio percentual mínimo do Dólar PTAX para categorizar um período como "Estresse Cambial".
+
+* **Pesos do Ranking Setorial (Bolsa, Resiliência Macro, Solidez Contábil):**
+  * **Escopo:** Alteram dinamicamente a ponderação dos pilares no gráfico *Ranking Setorial Multidimensional* (Aba Ranking Setorial).
+  * **Uso:** Permitem ao analista customizar o peso relativo ($0,00$ a $3,00$) atribuído à performance acionária, à resiliência frente aos ciclos monetários e aos indicadores de solvência contábil, recalculando instantaneamente o Score Final Consolidado e a ordenação dos setores.
+        
+
+<br>
+
+![d4_6](./images/d4/d4_6_dados_filtro_local.png)
+
+<br>
+
 
 ---
 
 ## 11. Como Executar Localmente
-> 🚧 A preencher no Card 12 (Trello)
+
+### Pré-requisitos
+
+* Python 3.11 instalado na máquina local.
+* Git para clonagem do repositório.
+
+### Passo a Passo
+
+1. **Clonar o Repositório:**
+```bash
+git clone https://github.com/lf-vampre/sctec-datascience-projeto-avaliativo-2
+cd sctec-datascience-projeto-avaliativo-2
+
+```
+
+
+2. **Criar e Ativar o Ambiente Virtual:**
+```bash
+# Windows
+python -m venv .venv
+.venv\Scripts\activate
+
+# Linux/macOS
+python3 -m venv .venv
+source .venv/bin/activate
+
+```
+
+
+3. **Instalar as Dependências:**
+```bash
+pip install --upgrade pip
+pip install -r requirements.txt
+
+```
+
+
+4. **Configurar os Arquivos de Segredos (Opcional para Banco Neon):**
+Crie a pasta `.streamlit/` na raiz do projeto e adicione o arquivo `secrets.toml` baseado no exemplo disponibilizado:
+```bash
+cp .streamlit/secrets.toml.example .streamlit/secrets.toml
+
+```
+
+
+*Nota: Caso as credenciais do PostgreSQL não sejam preenchidas, o aplicativo ativará automaticamente o modo de fallback Parquet.*
+5. **Executar o Data App:**
+```bash
+streamlit run app.py
+
+```
 
 ---
 
-## 12. Estrutura de Pastas
+## 12. Estrutura de Pastas do Repositório
 
 ```
-sctec-datascience-projeto-avaliativo-2/
-├── app.py                     # Entrypoint da aplicação e roteamento
-├── requirements.txt           # Dependências com versões fixadas
-├── .gitignore                 # Regras de exclusão do Git
-├── README.md                  # Documentação principal
-├── .streamlit/                # Configurações nativas do Streamlit e secrets
-│   ├── config.toml            # Tema base e parâmetros do servidor
-│   └── secrets.toml.example   # Modelo de variáveis de ambiente e conexões
-├── data/                      # Armazenamento em camadas
-│   ├── bronze/                # Dados brutos das APIs e arquivos (ignorado no git)
-│   ├── silver/                # Dados limpos, tipados e padronizados (ignorado no git)
-│   ├── gold/                  # Modelo dimensional Star Schema (VERSIONADO)
-│   └── _sandbox/              # Execuções de teste do DataOps
-├── images/                    # Imagens da documentação (README.md)
-└── src/                       # Código-fonte modularizado
-    ├── config/                # Mapeamento do universo, contas e parâmetros centrais
-    ├── models/                # Dataclasses e contratos de dados
-    ├── etl/                   # Pipeline de dados (sem dependência da UI)
-    │   ├── extractors/        # Módulos de ingestão de dados brutos
-    │   ├── cleaners/          # Módulos de limpeza e padronização
-    │   ├── warehouse/         # Carga do Star Schema e cálculo de métricas
-    │   ├── eda/               # Profiling de qualidade e análise exploratória (substitui notebooks/)
-    │   └── tests/             # Testes das camadas ETL
-    ├── ui/                    # Interface gráfica do usuário
-    │   ├── dashboards/        # Módulos de dashboards do BI Executivo
-    │   ├── charts/            # Construção de figuras e gráficos Plotly
-    │   ├── components/        # Componentes e wrappers reutilizáveis de UI
-    │   ├── prep/              # Preparação de dados para visualização
-    │   └── styles/            # Folhas de estilo CSS customizadas
-    └── utils/                 # Utilitários de caminhos, memória e formatação
-```
+plataforma-financeira-triade/
+├── .streamlit/                # Configurações do servidor e secrets
+│   ├── config.toml            # Tema nativo do Streamlit
+│   └── secrets.toml.example   # Modelo de variáveis de ambiente
+├── data/                      # Repositório de dados em camadas
+│   ├── _sandbox/              # Execuções de teste do DataOps
+│   ├── bronze/                # Arquivos brutos (ignorado no Git)
+│   ├── silver/                # Arquivos higienizados (ignorado no Git)
+│   └── gold/                  # Modelo dimensional Star Schema (VERSIONADO)
+├── images/                    # Imagens e capturas de tela da documentação
+│   ├── d1/                    # Screenshots do Dashboard Macro
+│   ├── d2/                    # Screenshots do Dashboard Fundamentalista
+│   ├── d3/                    # Screenshots do Dashboard Mercado
+│   ├── d4/                    # Screenshots do Dashboard Integrado
+│   ├── dataops/               # Screenshots do DataOps e Profiling EDA
+│   └── trello/                # Screenshots de acompanhamento Kanban
+├── scripts/                   # Scripts utilitários de validação e auditoria
+├── src/                       # Código-fonte modularizado do projeto
+│   ├── config/                # Parâmetros globais, temas e universo
+│   ├── etl/                   # Extratores, higienizadores e warehouse
+│   │   ├── cleaners/          # Módulos de limpeza e mapeamento contábil
+│   │   ├── eda/               # Profiling estatístico e diagnóstico
+│   │   ├── extractors/        # Ingestão de APIs e dados abertos
+│   │   ├── tests/             # Suíte de testes unitários de ETL
+│   │   └── warehouse/         # Modelagem Star Schema e persistência
+│   ├── models/                # Dataclasses e contratos de dados
+│   ├── ui/                    # Componentes de interface gráfica
+│   │   ├── charts/            # Geradores de figuras Plotly
+│   │   ├── components/        # Wrappers de métricas, headers e notas
+│   │   ├── dashboards/        # Layouts dos 4 dashboards
+│   │   ├── prep/              # Preparação analítica e storytelling
+│   │   ├── styles/            # Estilos CSS isolados
+│   │   └── tests/             # Testes de integração da interface
+│   └── utils/                 # Formatação, gestão de memória e caminhos
+├── app.py                     # Entrypoint e roteador principal do aplicativo
+├── README.md                  # Documentação executiva completa do projeto
+└── requirements.txt           # Mapeamento de dependências com versões fixadas
 
-> **Nota:** A pasta `notebooks/` (solicitada na documentação do projeto) foi substituída pelo módulo `src/etl/eda/`, permitindo a execução do Análise Exploratória de Dados (EDA) e Profiling diretamente na interface do DataOps Control Tower.
+```
 
 ---
 
 ## 13. Gestão Ágil e Links do Projeto
-- **Quadro Trello do Projeto:** [Acessar Trello](https://trello.com/invite/b/)
-- **Streamlit Cloud (Data App):** *A preencher no Card 12*
-- **Vídeo de Demonstração (Pitch):** *A preencher no Card 13*
 
-Todo o fluxo de implementação do projeto foi distribuido em 13 cards colocados na coluna `Backlog` do Trello. Cada card com a descrição da branch específica, o checklist de tarefas e o cronograma (data prevista para iniciar e finalizar as tarefas).
+O planejamento e o acompanhamento de todas as entregas do projeto foram conduzidos de forma autônoma utilizando a metodologia Kanban no Trello.
 
-Na data prevista, o card é movido para coluna `A Fazer`, desta forma é possível visualizar se o cronograma está sendo cumprido ou está atrasado. Somente 1 card pode estar na coluna `Em Andamento` enquanto está sendo executado. Uma vez concluído é colocado na coluna `Concluído`.
+* **Fluxo de Trabalho:** Estruturado nas colunas *Backlog*, *A Fazer*, *Em Andamento* e *Concluído*.
+* **WIP Limit (Trabalho em Andamento):** Mantida rigorosamente a regra de apenas 1 card ativo por vez na coluna *Em Andamento*.
+
+### Registros do Quadro Kanban
+
+* **Fase Inicial de Planejamento (Estruturação do Backlog):**
+
+<br>
+
+![trello_inicio](./images/trello/trello_inicio.png)
+
+<br>
+
+* **Fase Final de Conclusão (Todas as Histórias Entregues):**
+
+<br>
+
+![trello_final](./images/trello/trello_final.png)
+
+<br>
 
 
-![Print do Quadro Inicial do Trello](images/trello01.png)  
-*(Demonstrativo de uma tarefa concluída, uma sendo executada em atraso, duas em espera e backlog)*
+### Links Oficiais do Projeto
+
+* **Quadro Público no Trello:** [Acessar Quadro Kanban](https://trello.com/invite/b/6adab459be4196e0b94991da/ATTI6636f5b2655040c9f3624788e2d6c788F8374B53/projeto-final-sctec-felipe-vampre)
+* **Aplicação em Produção (Streamlit Cloud):** [Acessar Data App]()
+* **Vídeo de Demonstração (Pitch Executivo):** [Assistir Vídeo do Projeto]()
 
 ---
 
 ## 14. Autoria e Créditos
-- **Autor:** Luiz Felipe F V Vieira
+
+* **Desenvolvedor:** Luiz Felipe F V Vieira
+
+### Metodologia e Cálculos
+
+Na última aba de cada dashboard (**Dados & Metodologia**) contém todos os cálculos utilizados para criação dos indicadores.
+
+
+### Referências Bibliográficas e Fontes Consultadas
+
+1. **Banco Central do Brasil (BACEN):** Portal de Dados Abertos e API do Sistema Gerenciador de Séries Temporais (SGS).
+2. **Comissão de Valores Mobiliários (CVM):** Portal de Dados Abertos — Demonstrações Financeiras Padronizadas (DFP) e Cadastro de Companhias Abertas.
+3. **B3 (Brasil, Bolsa, Balcão):** Dados históricos de cotações e negociação de ativos.
+4. **Fisher, Irving:** *The Theory of Interest*. Macmillan, 1930 (Equação de Fisher para determinação do Juro Real).
+5. **Streamlit Documentation:** *API Reference and Architecture Guidelines* (Streamlit v1.40+).
+6. **Plotly Python Open Source Graphing Library:** *Plotly Express and Subplots Documentation*.
+
+
+### Versionamento e Histórico de Commits (git log --oneline)
+
