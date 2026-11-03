@@ -358,6 +358,7 @@ Interface dedicada à gestão de pipeline e diagnósticos estatísticos de quali
 
 
 * **Painel de Análise Exploratória (EDA):**
+
 | Módulo EDA | Visualização de Diagnóstico |
 | --- | --- |
 | **Qualidade & Duplicatas** | ![dataops_eda1](./images/dataops/dataops_eda_1_nulos_duplicatas.png) |
