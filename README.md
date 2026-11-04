@@ -857,7 +857,7 @@ O planejamento e o acompanhamento de todas as entregas do projeto foram conduzid
 ### Links Oficiais do Projeto
 
 * **Quadro Público no Trello:** [Acessar Quadro Kanban](https://trello.com/invite/b/6adab459be4196e0b94991da/ATTI6636f5b2655040c9f3624788e2d6c788F8374B53/projeto-final-sctec-felipe-vampre)
-* **Aplicação em Produção (Streamlit Cloud):** [Acessar Data App]()
+* **Aplicação em Produção (Streamlit Cloud):** [Acessar Data App](https://sctec-datascience-projeto-avaliativo-2.streamlit.app/)
 * **Vídeo de Demonstração (Pitch Executivo):** [Assistir Vídeo do Projeto]()
 
 ---
@@ -866,10 +866,13 @@ O planejamento e o acompanhamento de todas as entregas do projeto foram conduzid
 
 * **Desenvolvedor:** Luiz Felipe F V Vieira
 
+---
+
 ### Metodologia e Cálculos
 
 Na última aba de cada dashboard (**Dados & Metodologia**) contém todos os cálculos utilizados para criação dos indicadores.
 
+---
 
 ### Referências Bibliográficas e Fontes Consultadas
 
@@ -880,6 +883,270 @@ Na última aba de cada dashboard (**Dados & Metodologia**) contém todos os cál
 5. **Streamlit Documentation:** *API Reference and Architecture Guidelines* (Streamlit v1.40+).
 6. **Plotly Python Open Source Graphing Library:** *Plotly Express and Subplots Documentation*.
 
+---
 
 ### Versionamento e Histórico de Commits (git log --oneline)
 
+de00883 (HEAD -> main, origin/main, origin/develop, origin/HEAD, develop) Merge branch 'feat/deploy-and-docs' into develop
+
+2ef7c45 (origin/feat/deploy-and-docs, feat/deploy-and-docs) edita documentação README com informações do filtros
+
+5e88723 edita documentação README com informações dos dashboards
+
+08408fb edita documentação README ajuste tabela imagens dataops.
+
+0414b43 edita documentação README com informações que faltavam.
+
+fdd77ad inclui guia de uso dos filtros, interpretação dos indicadores e metodologia na aba Dados e Metodolotia
+
+743cb71 ajusta e faz refinamentos finais na UI
+
+34bb81f ajusta testes finais pytest e corrige msg de erro secrets.toml ausente.
+
+7b10492 Merge branch 'feat/eda-dataops' into develop
+
+517236d (origin/feat/eda-dataops, feat/eda-dataops) feat(ui): adiciona aba de eda no dataops e documenta achados
+
+bb32d99 feat(etl): implementa profiler de eda somente leitura
+
+12a9a86 Merge branch 'feat/executive-view-integration' into develop
+
+e0de136 (origin/feat/executive-view-integration, feat/executive-view-integration) feat(ui): constroi visao executiva com menu superior, sidebar global e otimizacao do data app
+
+6d6d192 perf(ui): revisa cache e adiciona botao de atualizacao, refina theme.css
+
+12d8b4a feat(ui): cria executive view com menu horizontal, despacho sob demanda e indicador de conexao
+
+cd280b2 feat(ui): adiciona sidebar global com filtros cruzados e reset
+
+c6c189c Merge branch 'feat/dashboard-integrated' into develop
+
+c771e47 (origin/feat/dashboard-integrated, feat/dashboard-integrated) feat(ui): constroi dashboard bi visao integrada da triade
+
+9e2a8f7 feat(ui): constroi graficos plotly do dashboard integrado
+
+7447417 feat(ui): adiciona preparacao das perguntas de negocio da triade
+
+c669aa9 feat(ui): adiciona preparacao de dados da triade para o dashboard integrado
+
+de00883 (HEAD -> main, origin/main, origin/develop, origin/HEAD, develop) Merge branch 'feat/deploy-and-docs' into develop
+
+2ef7c45 (origin/feat/deploy-and-docs, feat/deploy-and-docs) edita documentação README com informações do filtros
+
+5e88723 edita documentação README com informações dos dashboards
+
+08408fb edita documentação README ajuste tabela imagens dataops.
+
+0414b43 edita documentação README com informações que faltavam.
+
+fdd77ad inclui guia de uso dos filtros, interpretação dos indicadores e metodologia na aba Dados e Metodolotia
+
+743cb71 ajusta e faz refinamentos finais na UI
+
+34bb81f ajusta testes finais pytest e corrige msg de erro secrets.toml ausente.
+
+7b10492 Merge branch 'feat/eda-dataops' into develop
+
+517236d (origin/feat/eda-dataops, feat/eda-dataops) feat(ui): adiciona aba de eda no dataops e documenta achados
+
+bb32d99 feat(etl): implementa profiler de eda somente leitura
+
+12a9a86 Merge branch 'feat/executive-view-integration' into develop
+
+e0de136 (origin/feat/executive-view-integration, feat/executive-view-integration) feat(ui): constroi visao executiva com menu superior, sidebar global e otimizacao do data app
+
+6d6d192 perf(ui): revisa cache e adiciona botao de atualizacao, refina theme.css
+
+12d8b4a feat(ui): cria executive view com menu horizontal, despacho sob demanda e indicador de conexao
+
+cd280b2 feat(ui): adiciona sidebar global com filtros cruzados e reset
+
+c6c189c Merge branch 'feat/dashboard-integrated' into develop
+
+c771e47 (origin/feat/dashboard-integrated, feat/dashboard-integrated) feat(ui): constroi dashboard bi visao integrada da triade
+
+9e2a8f7 feat(ui): constroi graficos plotly do dashboard integrado
+
+7447417 feat(ui): adiciona preparacao das perguntas de negocio da triade
+
+c669aa9 feat(ui): adiciona preparacao de dados da triade para o dashboard integrado
+
+d603dfc Merge branch 'feat/dashboard-b3' into develop
+
+da6e6d6 (origin/feat/dashboard-b3, feat/dashboard-b3) feat(ui): constroi dashboard bi mercado financeiro e risco (b3)
+
+6108339 feat(ui): constroi graficos plotly do dashboard de mercado
+
+7dda81f feat(ui): adiciona preparacao de dados do dashboard de mercado
+
+21ea3b6 Merge branch 'feat/dashboard-cvm' into develop
+
+1356ff7 (origin/feat/dashboard-cvm, feat/dashboard-cvm) feat(ui): constroi dashboard bi analise fundamentalista e contabil (cvm)
+
+005c4fb feat(ui): constroi graficos plotly do dashboard fundamentalista
+
+1631aad feat(ui): adiciona preparacao de dados do dashboard fundamentalista
+
+31bd767 Merge branch 'feat/dashboard-macro' into develop
+
+ef7d8d2 (origin/feat/dashboard-macro, feat/dashboard-macro) feat(ui): constroi dashboard bi inteligencia macroeconomica (bacen)
+
+ff70ebf feat(ui): constroi graficos plotly do dashboard macro
+
+8f89183 feat(ui): adiciona preparacao de dados do dashboard macro
+
+b828ad1 feat(ui): adiciona template plotly e utilitarios de graficos
+
+48ef137 data: adiciona versionamento gold
+
+0ccf168 feat(ui): adiciona data loader da ouro com cache e contingencia
+
+29a0ced db.py: le credenciais do neon via st.secrets e reaproveita engine.
+
+0871a63 Merge branch 'feat/streamlit-dataops' into develop
+
+df9f8fc (origin/feat/streamlit-dataops, feat/streamlit-dataops) docs: atualiza readme com dataops
+
+70bfaff tests: atualiza arquivos de teste após novas modificações / implementações ao Dataops
+
+8664459 data: remove arquivos/pastas dados ignorados do versionamento
+
+4ae8121 data: remove arquivos/pastas dados ignorados do versionamento
+
+5ea1951 feat(dataops): unifica execucao por fases, corrige autenticacao e valida reutilizaçao da bronze
+
+59b282b data: remove arquivos/pastas dados ignorados do versionamento
+
+d3a897d Merge branch 'feat/streamlit-dataops' into develop
+
+71728a5 feat(ui): adiciona formulario de parametros e modo de execucao do dataops
+
+6976fab Merge branch 'feat/streamlit-dataops' into develop
+
+6440084 feat(etl): implementa orquestrador do pipeline com modos e controle de execucao
+
+448bf27 Merge branch 'feat/streamlit-landing-page' into develop
+
+7243efe (origin/feat/streamlit-landing-page, feat/streamlit-landing-page) feat(ui): adiciona componentes reutilizaveis e atualiza documentacao da ui
+
+3fd6f62 Merge branch 'feat/streamlit-landing-page' into develop
+
+89b02ed feat(ui): cria landing page com selecao de modo
+
+6230fe3 Merge branch 'feat/streamlit-landing-page' into develop
+
+ca84259 feat(ui): adiciona tokens de tema, css isolado e estado de sessao
+
+660617f Merge branch 'feat/star-schema-gold' into develop
+
+b8a5936 (origin/feat/star-schema-gold, feat/star-schema-gold) chore(data): versiona camada ouro como fallback
+
+f0496a8 feat(etl/warehouse): modelagem star schema e persistencia ouro
+
+a956433 Merge branch 'feat/star-schema-gold' into develop
+
+dc19634 feat(etl/warehouse): adiciona persistencia da ouro com manifest e fallback de leitura
+
+b19bb49 Merge branch 'feat/star-schema-gold' into develop
+
+1f1deeb data: adiciona dados em data/_sandbox
+
+42495c2 feat(etl/warehouse): cria fatos do star schema e indicadores derivados
+
+c9b543d Merge branch 'feat/star-schema-gold' into develop
+
+602197f feat(etl/warehouse): implementa calculo de metricas financeiras e macro
+
+c48c1c3 Merge branch 'feat/star-schema-gold' into develop
+
+ccfb236 feat(etl/warehouse): cria dimensoes do star schema
+
+08f8cc9 Merge branch 'feat/etl-silver' into develop
+
+d9a0c68 (origin/feat/etl-silver, feat/etl-silver) feat(etl): cria tratamento prata para cadastro cvm
+
+929f59b Merge branch 'feat/etl-silver' into develop
+
+ce45695 docs: atualiza readme com camada prata
+
+4151faa Merge branch 'feat/etl-silver' into develop
+
+56b1ecb data: adiciona dados camada silver
+
+ef7646d test(etl): valida fluxo desacoplado e idempotencia da camada prata
+
+adf181f Merge branch 'feat/etl-silver' into develop
+
+e6725d9 feat(etl): mapeia contas cvm por tipo de plano
+
+fba2a3e Merge branch 'feat/etl-silver' into develop
+
+ce150dc feat(etl): cria tratamento prata para cvm
+
+157fd23 Merge branch 'feat/etl-silver' into develop
+
+6ada9f8 feat(etl): cria tratamento prata para b3
+
+16f26e9 Merge branch 'feat/etl-silver' into develop
+
+3f972e3 feat(etl): cria tratamento prata para bacen
+
+875345e Merge branch 'feat/etl-bronze' into develop
+
+886d1fd (origin/feat/etl-bronze, feat/etl-bronze) data: remove dados do gitignore e persiste no repo
+
+d07854d docs: finaliza validacao da camada bronze e atualiza readme
+
+f2e048c Merge branch 'feat/etl-bronze' into develop
+
+8a4213b feat(etl): implementa extrator cvm na camada bronze
+
+a76c545 Merge branch 'feat/etl-bronze' into develop
+
+2014250 feat(etl): implementa extrator b3 na camada bronze, versão lib yfinance atualizada
+
+b8c5f23 Merge branch 'feat/etl-bronze' into develop
+
+de11c09 feat(etl): implementa extrator de cadastro cvm na camada bronze
+
+557341a Merge branch 'feat/etl-bronze' into develop
+
+b43ae61 feat(etl): implementa extrator bacen na camada bronze
+
+33b5ffc Merge branch 'feat/etl-bronze' into develop
+
+5195d76 feat(etl/warehouse): adiciona persistencia parquet e neon com upsert por particao
+
+029c27a Merge branch 'feat/etl-bronze' into develop
+
+d799b55 feat(etl): adiciona base do etl com logger, classes abstratas e controle de execucao
+
+a83df7d Merge branch 'feat/etl-bronze' into develop
+
+b20b3c0 feat(utils): adiciona conexao resiliente com neon
+
+e577ee7 Merge branch 'feat/initial-setup' into develop
+
+4988ccb (origin/feat/initial-setup, feat/initial-setup) images: adiciona pasta de imagens para o readme
+
+620c03f docs: adiciona esqueleto do readme
+
+bb7ac3c Merge branch 'feat/initial-setup' into develop
+
+a739b37 adiciona utilitarios de caminhos, memoria e formatacao
+
+1feeaba adiciona contratos do pipeline
+
+c7fecf9 adiciona config central
+
+72b2905 Merge branch 'feat/initial-setup' into develop
+
+7aaff85 adiciona estrutura de pastas
+
+100a3c4 adiciona configuracao streamlit
+
+a6d80f6 adiciona requirements
+
+9e6d5f6 configura gitignore
+
+5acedc1 Initial commit
