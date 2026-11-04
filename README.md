@@ -857,8 +857,8 @@ O planejamento e o acompanhamento de todas as entregas do projeto foram conduzid
 ### Links Oficiais do Projeto
 
 * **Quadro Público no Trello:** [Acessar Quadro Kanban](https://trello.com/invite/b/6adab459be4196e0b94991da/ATTI6636f5b2655040c9f3624788e2d6c788F8374B53/projeto-final-sctec-felipe-vampre)
-* **Aplicação em Produção (Streamlit Cloud):** [Acessar Data App](https://sctec-datascience-projeto-avaliativo-2.streamlit.app/)
-* **Vídeo de Demonstração (Pitch Executivo):** [Assistir Vídeo do Projeto]()
+* **Aplicação em Produção (Streamlit Cloud):** [Acessar Data App](https://sctec-datascience-projeto-avaliativo-2-felipe.streamlit.app/)
+* **Vídeo de Demonstração (Pitch Executivo):** *Enviado via AVA (Ambiente virtual de Aprendizagem)*
 
 ---
 
